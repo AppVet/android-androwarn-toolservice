@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+	targetNamespace="https://appsec.nist.gov/appvet" 
+	xmlns="https://appsec.nist.gov/appvet"
+	elementFormDefault="qualified">
+
+	<xs:element name="Tool" type="ToolType"/>
+	<xs:complexType name="ToolType">
+		<xs:sequence>
+			<xs:element name="Name" type="xs:string" maxOccurs="1"
+				minOccurs="1">
+				<xs:annotation>
+					<xs:documentation>The human-readable name of this service.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Version" type="xs:string" maxOccurs="1"
+				minOccurs="1">
+				<xs:annotation>
+					<xs:documentation>The version of this tool.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="ServiceURL" type="xs:anyURI" maxOccurs="1"
+				minOccurs="1">
+				<xs:annotation>
+					<xs:documentation>The URL for this (tool) service (not
+						the *servlet*
+						URL). For example:
+						https://www.example.com/example-service, but not
+						https://www.example.com/example-service/Service.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="AppVetProtocol" type="ProtocolType"
+				maxOccurs="1" minOccurs="1">
+				<xs:annotation>
+					<xs:documentation>The AppVet communication protocol used (i.e.,
+						SYNCHRONOUS or
+						ASYNCHRONOUS).
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="AppOs" type="AppOsType" maxOccurs="1"
+				minOccurs="1">
+				<xs:annotation>
+					<xs:documentation>The operating system platform of received apps
+						(e.g., ANDROID or IOS).
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Command" type="xs:string" maxOccurs="1"
+				minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>The native command or tool (with arguments) that
+						this service wraps.
+						Note that commands are optional since the tool
+						commands can be
+						encoded directly into the Service class if needed.
+						Example: jarsigner -verify -strict -verbose -certs
+						[APP_FILE_PATH].
+						Note that Command supports the following
+						substitutions:
+						[APP_FILE_PATH]: The absolute path of the app file.
+						[APP_PROJECT_PATH]: The absolute path of the app's project which
+						is
+						the name of the app minus the file extension.
+						[OUTPUT_FILE_PATH]: The absolute path of the results output.
+						[HOME]: The absolute path of the user's $HOME directory.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="CommandTimeout" type="xs:long"
+				maxOccurs="1" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>The amount of time in miliseconds before
+						terminating the executed command.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+
+
+			<xs:element name="Logging" type="LoggingType" maxOccurs="1"
+				minOccurs="1" />
+			<xs:element name="Report" type="ReportType" maxOccurs="1"
+				minOccurs="1" />
+
+			<xs:element name="AppVet" type="AppVetType" maxOccurs="1"
+				minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>
+						This element defines the AppVet properties for
+						returning reports to AppVet. This element is
+						used only by
+						asynchronous services.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+
+	<xs:simpleType name="ProtocolType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="SYNCHRONOUS" />
+			<xs:enumeration value="ASYNCHRONOUS" />
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="AppOsType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="ANDROID" />
+			<xs:enumeration value="IOS" />
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:complexType name="LoggingType">
+		<xs:sequence>
+			<xs:element name="Level" type="LevelType" maxOccurs="1"
+				minOccurs="1" />
+			<xs:element name="ToConsole" type="xs:boolean" maxOccurs="1"
+				minOccurs="1" />
+			<xs:element name="LogName" type="xs:string" maxOccurs="1"
+				minOccurs="1" />
+		</xs:sequence>
+	</xs:complexType>
+
+	<xs:simpleType name="LevelType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="DEBUG" />
+			<xs:enumeration value="INFO" />
+			<xs:enumeration value="WARNING" />
+			<xs:enumeration value="ERROR" />
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:complexType name="ReportType">
+		<xs:sequence>
+			<xs:element name="Format" type="FormatType" maxOccurs="1"
+				minOccurs="1" />
+			<xs:element name="Result" type="ResultType" maxOccurs="1"
+				minOccurs="1" />
+		</xs:sequence>
+	</xs:complexType>
+
+	<xs:complexType name="ResultType">
+		<xs:sequence>
+			<xs:element name="DefaultStatus" type="StatusType"
+				maxOccurs="1" minOccurs="1" />
+			<xs:element name="Error" type="xs:string" maxOccurs="unbounded"
+				minOccurs="0" />
+			<xs:element name="Low" type="xs:string" maxOccurs="unbounded"
+				minOccurs="0" />
+			<xs:element name="Moderate" type="xs:string" maxOccurs="unbounded"
+				minOccurs="0" />
+			<xs:element name="HIgh" type="xs:string" maxOccurs="unbounded"
+				minOccurs="0" />
+		</xs:sequence>
+	</xs:complexType>
+
+	<xs:simpleType name="FormatType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="TXT" />
+			<xs:enumeration value="HTML" />
+			<xs:enumeration value="RTF" />
+			<xs:enumeration value="PDF" />
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="StatusType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="ERROR" />
+			<xs:enumeration value="LOW" />
+			<xs:enumeration value="MODERATE" />
+			<xs:enumeration value="HIGH" />
+		</xs:restriction>
+	</xs:simpleType>
+
+
+	<xs:complexType name="AppVetType">
+		<xs:sequence>
+			<xs:element name="URL" type="xs:anyURI" maxOccurs="1"
+				minOccurs="1">
+			</xs:element>
+			<xs:element name="Method" type="MethodType" maxOccurs="1"
+				minOccurs="1">
+			</xs:element>
+			<xs:element name="ToolId" type="xs:string" maxOccurs="1"
+				minOccurs="1"></xs:element>
+			<xs:element name="Username" type="xs:string" maxOccurs="1"
+				minOccurs="1">
+			</xs:element>
+			<xs:element name="Password" type="xs:string" maxOccurs="1"
+				minOccurs="1">
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+
+	<xs:simpleType name="MethodType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="POST" />
+			<xs:enumeration value="GET" />
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:complexType name="ParameterType">
+		<xs:sequence>
+			<xs:element name="Name" type="xs:string" maxOccurs="1"
+				minOccurs="1">
+			</xs:element>
+			<xs:element name="Value" type="xs:string" maxOccurs="1"
+				minOccurs="1"></xs:element>
+		</xs:sequence>
+	</xs:complexType>
+</xs:schema>
