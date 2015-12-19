@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<appvet:ToolAdapter xmlns:appvet="https://appsec.nist.gov/appvet"
+<appvet:ToolAdapter xmlns:appvet="http://appvet.github.io/appvet/schemas"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="https://appsec.nist.gov/appvet ToolAdapter.xsd ">
+	xsi:schemaLocation="http://appvet.github.io/appvet/schemas ToolAdapter.xsd ">
 	<appvet:Description>
 		<appvet:Name>Android Androwarn Service</appvet:Name>
 		<appvet:Id>androwarn</appvet:Id>
