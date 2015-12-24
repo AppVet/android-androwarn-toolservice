@@ -113,20 +113,22 @@ public class Properties {
 		/* CHANGE (END): Check if tool exists */
 
 		TEMP_DIR = ANDROID_ANDROWARN_FILES_HOME + "/apps";
-		if (!new File(TEMP_DIR).exists()) {
-			System.err
-					.println("Directory $ANDROID_ANDROWARN_FILES_HOME/apps does not exist.");
+		File tempDir = new File(TEMP_DIR);
+		if (!tempDir.exists()) {
+			tempDir.mkdirs();
+			System.out.println("Created temp directory for Appollo");
 		}
+		
 		CONF_DIR = ANDROID_ANDROWARN_FILES_HOME + "/conf";
 		if (!new File(CONF_DIR).exists()) {
 			System.err
 					.println("Directory $ANDROID_ANDROWARN_FILES_HOME/conf does not exist.");
 		}
 		LOGS_DIR = ANDROID_ANDROWARN_FILES_HOME + "/logs";
-		if (!new File(LOGS_DIR).exists()) {
-			System.err
-					.println("Directory $ANDROID_ANDROWARN_FILES_HOME/logs does not exist.");
-		}
+//		if (!new File(LOGS_DIR).exists()) {
+//			System.err
+//					.println("Directory $ANDROID_ANDROWARN_FILES_HOME/logs does not exist.");
+//		}
 
 		// Load XML property file
 		File configFile = new File(CONF_DIR + "/" + PROPERTIES_FILE_NAME);
@@ -138,9 +140,9 @@ public class Properties {
 		// Do Logging first so we can use log below
 		String logName = xml.getXPathValue("/Tool/Logging/LogName");
 		LOG_PATH = LOGS_DIR + "/" + logName;
-		if (!new File(LOG_PATH).exists()) {
-			System.err.println("Log " + LOG_PATH + " does not exist.");
-		}
+//		if (!new File(LOG_PATH).exists()) {
+//			System.err.println("Log " + LOG_PATH + " does not exist.");
+//		}
 		LOG_LEVEL = xml.getXPathValue("/Tool/Logging/Level");
 		LOG_TO_CONSOLE = new Boolean(
 				xml.getXPathValue("/Tool/Logging/ToConsole")).booleanValue();
