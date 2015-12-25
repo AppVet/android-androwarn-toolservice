@@ -124,11 +124,7 @@ public class Properties {
 			System.err
 					.println("Directory $ANDROID_ANDROWARN_FILES_HOME/conf does not exist.");
 		}
-		LOGS_DIR = ANDROID_ANDROWARN_FILES_HOME + "/logs";
-//		if (!new File(LOGS_DIR).exists()) {
-//			System.err
-//					.println("Directory $ANDROID_ANDROWARN_FILES_HOME/logs does not exist.");
-//		}
+		
 
 		// Load XML property file
 		File configFile = new File(CONF_DIR + "/" + PROPERTIES_FILE_NAME);
@@ -138,11 +134,9 @@ public class Properties {
 		final Xml xml = new Xml(configFile);
 
 		// Do Logging first so we can use log below
+		LOGS_DIR = ANDROID_ANDROWARN_FILES_HOME + "/logs";
 		String logName = xml.getXPathValue("/Tool/Logging/LogName");
 		LOG_PATH = LOGS_DIR + "/" + logName;
-//		if (!new File(LOG_PATH).exists()) {
-//			System.err.println("Log " + LOG_PATH + " does not exist.");
-//		}
 		LOG_LEVEL = xml.getXPathValue("/Tool/Logging/Level");
 		LOG_TO_CONSOLE = new Boolean(
 				xml.getXPathValue("/Tool/Logging/ToConsole")).booleanValue();

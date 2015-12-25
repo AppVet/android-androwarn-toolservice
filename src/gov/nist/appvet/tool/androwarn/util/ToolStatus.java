@@ -22,8 +22,8 @@ package gov.nist.appvet.tool.androwarn.util;
 public enum ToolStatus {
     ERROR,
     LOW,
-	MODERATE,
-	HIGH;
+    MODERATE,
+    HIGH;
 
     private static final ToolStatus[] copyOfValues = values();
     
