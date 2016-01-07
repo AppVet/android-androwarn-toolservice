@@ -7,7 +7,7 @@
 	<appvet:ServiceURL>http://127.0.0.1:8080/android-androwarn-toolservice</appvet:ServiceURL>
 	<appvet:AppVetProtocol>ASYNCHRONOUS</appvet:AppVetProtocol>
 	<appvet:AppOs>ANDROID</appvet:AppOs>
-
+	<appvet:KeepApps>true</appvet:KeepApps>
 	<appvet:Command>python [ANDROWARN_HOME]/androwarn.py -i [APP_FILE_PATH] -v 1 -d -L ERROR -n</appvet:Command>
 	<!-- 1200000ms = 20 minute command timeout -->
 	<appvet:CommandTimeout>1200000</appvet:CommandTimeout>

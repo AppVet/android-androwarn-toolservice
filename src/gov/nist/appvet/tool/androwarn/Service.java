@@ -231,11 +231,14 @@ public class Service extends HttpServlet {
 	}
 
 	// Clean up
-	if (FileUtil.deleteDirectory(new File(appDirPath))) {
-	    log.debug("Deleted " + appFilePath);
-	} else {
-	    log.warn("Could not delete " + appFilePath);
+	if (!Properties.keepApps) {
+	    if (FileUtil.deleteDirectory(new File(appDirPath))) {
+		log.debug("Deleted " + appFilePath);
+	    } else {
+		log.warn("Could not delete " + appFilePath);
+	    }
 	}
+
 	reportBuffer = null;
 	System.gc();
     }
