@@ -66,7 +66,7 @@ public class Service extends HttpServlet {
     private static final String LOW_DESCRIPTION = "Summary: \tAndrowarn found no vulnerabilities.\n\n";
     private static final String MODERATE_DESCRIPTION = "Summary: \tAndrowarn found moderate vulnerabilities.\n\n";
     private static final String HIGH_DESCRIPTION = "Summary: \tAndrowarn found high/severe vulnerabilities.\n\n";
-    private static final String ERROR_DESCRIPTION = "Summary: \tAndrowarn ncountered an error processing the app.\n\n";
+    private static final String ERROR_DESCRIPTION = "Summary: \tAndrowarn encountered an error processing the app.\n\n";
 
     /** CHANGE (START): Add expected HTTP request parameters **/
     /** CHANGE (END): Add expected HTTP request parameters **/

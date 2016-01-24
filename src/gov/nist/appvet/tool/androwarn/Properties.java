@@ -82,7 +82,7 @@ public class Properties {
 
     static {
 	/* CHANGE: Loading statement */
-	System.out.println("*** Starting Android Androwarn Service v" + version + " ***");
+	//System.out.println("*** Starting Android Androwarn Service v" + version + " ***");
 	String toolOS = System.getProperty("os.name");
 	JAVA_HOME = System.getenv("JAVA_HOME");
 	if (JAVA_HOME == null) {
@@ -120,7 +120,7 @@ public class Properties {
 	File tempDir = new File(TEMP_DIR);
 	if (!tempDir.exists()) {
 	    tempDir.mkdirs();
-	    System.out.println("Created temp directory for Appollo");
+	    //System.out.println("Created temp directory for Appollo");
 	}
 
 	CONF_DIR = ANDROID_ANDROWARN_FILES_HOME + "/conf";
