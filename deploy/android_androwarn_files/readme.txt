@@ -13,3 +13,5 @@ globally set to the path of the Androwarn installation directory. For example:
 ANDROWARN_HOME = /home/<username>/androwarn
 
 
+
+
