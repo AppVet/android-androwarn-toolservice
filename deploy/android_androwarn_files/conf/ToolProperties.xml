@@ -12,8 +12,8 @@
 	<!-- 1200000ms = 20 minute command timeout -->
 	<appvet:CommandTimeout>1200000</appvet:CommandTimeout>
 	<appvet:Logging>
-		<appvet:Level>INFO</appvet:Level>
-		<appvet:ToConsole>false</appvet:ToConsole>
+		<appvet:Level>WARNING</appvet:Level>
+		<appvet:ToConsole>true</appvet:ToConsole>
 		<appvet:LogName>log.txt</appvet:LogName>
 	</appvet:Logging>
 	<appvet:Report>
@@ -36,7 +36,7 @@
 		<appvet:URL>http://127.0.0.1:8080/appvet/AppVetServlet</appvet:URL>
 		<appvet:Method>POST</appvet:Method>
 		<appvet:ToolId>androwarn</appvet:ToolId>
-		<appvet:Username>androwarn-username</appvet:Username>
-		<appvet:Password>androwarn-password</appvet:Password>
+		<appvet:Username>androwarn</appvet:Username>
+		<appvet:Password>androwarn_password</appvet:Password>
 	</appvet:AppVet>
 </appvet:Tool>

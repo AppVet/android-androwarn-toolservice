@@ -156,7 +156,7 @@ public class FileUtil {
 			out.println(reportContent);
 			out.flush();
 			out.close();
-			log.debug("Saved " + reportFilePath);
+			log.debug("Saved report " + reportFilePath);
 			return true;
 		} catch (FileNotFoundException e) {
 			log.error(e.toString());

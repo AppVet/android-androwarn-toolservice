@@ -58,7 +58,7 @@ public class ReportUtil {
 				&& !Properties.errorResults.isEmpty()) {
 			for (String s : Properties.errorResults) {
 				if (report.indexOf(s) > -1) {
-					log.debug("Error message: " + s);
+					log.debug("Found ERROR message: " + s);
 					return ToolStatus.ERROR;
 				}
 			}
@@ -66,7 +66,7 @@ public class ReportUtil {
 		if (Properties.highResults != null && !Properties.highResults.isEmpty()) {
 			for (String s : Properties.highResults) {
 				if (report.indexOf(s) > -1) {
-					log.debug("High message: " + s);
+					log.debug("Found HIGH message: " + s);
 					return ToolStatus.HIGH;
 				}
 			}
@@ -75,7 +75,7 @@ public class ReportUtil {
 				&& !Properties.moderateResults.isEmpty()) {
 			for (String s : Properties.moderateResults) {
 				if (report.indexOf(s) > -1) {
-					log.debug("Moderate message: " + s);
+					log.debug("Found MODERATE message: " + s);
 					return ToolStatus.MODERATE;
 				}
 			}
@@ -83,7 +83,7 @@ public class ReportUtil {
 		if (Properties.lowResults != null && !Properties.lowResults.isEmpty()) {
 			for (String s : Properties.lowResults) {
 				if (report.indexOf(s) > -1) {
-					log.debug("Low message: " + s);
+					log.debug("Found LOW message: " + s);
 					return ToolStatus.LOW;
 				}
 			}
@@ -105,7 +105,7 @@ public class ReportUtil {
 			out.println(reportText);
 			out.flush();
 			out.close();
-			log.debug("Returned report");
+			log.debug("Returned report to AppVet");
 			return true;
 		} catch (IOException e) {
 			log.error(e.toString());

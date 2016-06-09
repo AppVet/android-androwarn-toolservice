@@ -35,7 +35,7 @@ import java.util.ArrayList;
 public class Properties {
 
     /** Github release version number. */
-    public static final String version = "1.0.1";
+    public static final String version = "1.0.3";
 
     /*
      * CHANGE: Declare tool-specific environment variables. Refactor
@@ -144,10 +144,43 @@ public class Properties {
 	LOG_TO_CONSOLE = new Boolean(
 		xml.getXPathValue("/Tool/Logging/ToConsole")).booleanValue();
 	log = new Logger(LOG_PATH, LOG_DISPLAY_NAME);
+	log.info("STARTING Android Androwarn Tool Service v" + version);
 	log.info("/Tool/Logging/LogName: " + logName);
 	log.info("/Tool/Logging/Level: " + LOG_LEVEL);
 	log.info("/Tool/Logging/ToConsole: "
 		+ new Boolean(LOG_TO_CONSOLE).toString());
+	
+	// Log previously computed variables
+	if (toolOS != null)
+		log.info("Tool OS: " + toolOS);
+	else 
+		log.error("Tool OS is null!");
+	
+	if (JAVA_HOME != null)
+		log.info("JAVA_HOME: " + JAVA_HOME);
+	else
+		log.error("JAVA_HOME is null!");
+		
+	if (ANDROWARN_HOME != null)
+		log.info("ANDROWARN_HOME: " + ANDROWARN_HOME);
+	else
+		log.error("ANDROWARN_HOME is null!");
+	
+	if (ANDROID_ANDROWARN_FILES_HOME != null)
+		log.info("ANDROID_ANDROWARN_FILES_HOME: " + ANDROID_ANDROWARN_FILES_HOME);
+	else
+		log.error("ANDROID_ANDROWARN_FILES_HOME is null!");
+	
+	if (androwarn != null)
+		log.info("Androwarn Python script: " + androwarn);
+	else
+		log.error("Androwarn Python script is null!");
+	
+	log.info("CONF_DIR: " + CONF_DIR);
+	log.info("LOGS_DIR: " + LOGS_DIR);
+	log.info("LOG_PATH: " + LOG_PATH);
+	log.info("LOG_LEVEL: " + LOG_LEVEL);
+	log.info("LOG_TO_CONSOLE: " + LOG_TO_CONSOLE);
 
 	// Tool name
 	toolName = xml.getXPathValue("/Tool/Name");
@@ -176,6 +209,7 @@ public class Properties {
 	// Command Timeout
 	String cmdTimeoutStr = xml.getXPathValue("/Tool/CommandTimeout");
 	commandTimeout = new Integer(cmdTimeoutStr).intValue();
+	log.info("/Tool/CommandTimeout: " + commandTimeout);
 
 	// Get report format
 	reportFormat = xml.getXPathValue("/Tool/Report/Format");
@@ -186,11 +220,11 @@ public class Properties {
 		.getXPathValue("/Tool/Report/Result/DefaultStatus");
 	log.info("/Tool/Report/Result/DefaultStatus: " + defaultStatusString);
 	if (defaultStatusString == null || defaultStatusString.isEmpty()) {
-	    System.err.println("Default status cannot be null or empty.");
+	    log.error("Default status cannot be null or empty.");
 	}
 	defaultStatus = ToolStatus.getEnum(defaultStatusString);
 	if (defaultStatus == null) {
-	    System.err.println("Unknown default status.");
+	    log.error("Unknown default status.");
 	}
 	lowResults = xml.getXPathValues("/Tool/Report/Result/Low");
 	if (lowResults != null) {
