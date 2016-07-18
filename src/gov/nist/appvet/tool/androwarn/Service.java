@@ -356,7 +356,7 @@ public class Service extends HttpServlet {
 		private InputStream inputStream;
 		private StringBuilder output = new StringBuilder();
 		private static final String lineSeparator = System
-				.getProperty("line.separator");;
+				.getProperty("line.separator");
 
 				IOThreadHandler(InputStream inputStream) {
 					this.inputStream = inputStream;
