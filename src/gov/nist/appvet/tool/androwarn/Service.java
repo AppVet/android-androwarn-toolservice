@@ -74,15 +74,8 @@ public class Service extends HttpServlet {
 		super();
 	}
 
-	/*
-	 * // AppVet tool services will rarely use HTTP GET protected void
-	 * doGet(HttpServletRequest request, HttpServletResponse response) throws
-	 * ServletException, IOException {
-	 */
-
 	protected void doPost(HttpServletRequest request,
 			HttpServletResponse response) throws ServletException, IOException {
-		// Get received HTTP parameters and file upload
 		FileItemFactory factory = new DiskFileItemFactory();
 		ServletFileUpload upload = new ServletFileUpload(factory);
 		List items = null;
@@ -144,6 +137,7 @@ public class Service extends HttpServlet {
 
 			appFilePath = Properties.TEMP_DIR + "/" + appId + "/" + fileName;
 			log.debug("App file path: " + appFilePath);
+
 			if (!FileUtil.saveFileUpload(fileItem, appFilePath)) {
 				log.error("Could not save uploaded file");
 				HttpUtil.sendHttp500(response, "Could not save uploaded file");
@@ -171,6 +165,7 @@ public class Service extends HttpServlet {
 		} else {
 			log.warn("Did not send HTTP202 back to AppVet. Incorrect protocol");
 		}
+
 		/*
 		 * CHANGE: Select either execute() to execute a native OS command or
 		 * customExecute() to execute your own custom code. Make sure that the
@@ -217,6 +212,8 @@ public class Service extends HttpServlet {
 			reportContent = getTxtReport();
 		} else if (Properties.reportFormat.equals(ReportFormat.PDF.name())) {
 			reportContent = getPdfReport();
+		} else if (Properties.reportFormat.equals(ReportFormat.DOCX.name())) {
+			reportContent = getDocxReport();
 		} else if (Properties.reportFormat.equals(ReportFormat.JSON.name())) {
 			reportContent = getJsonReport();
 		}
@@ -231,7 +228,7 @@ public class Service extends HttpServlet {
 		if (Properties.protocol.equals(Protocol.SYNCHRONOUS.name())) {
 			// Send back ASCII in HTTP Response
 			ReportUtil
-			.sendInHttpResponse(response, reportContent, reportStatus);
+					.sendInHttpResponse(response, reportContent, reportStatus);
 		} else if (Properties.protocol.equals(Protocol.ASYNCHRONOUS.name())) {
 			// Send report file in new HTTP Request to AppVet
 			if (FileUtil.saveReport(reportContent, reportFilePath)) {
@@ -297,7 +294,7 @@ public class Service extends HttpServlet {
 			errorHandler.start();
 			if (process.waitFor(Properties.commandTimeout,
 					TimeUnit.MILLISECONDS)) {
-				// Process has waited and exited within the timeout
+				// Process has waited and exited successfully within the timeout
 				exitValue = process.exitValue();
 				if (exitValue == 0) {
 					log.debug("Command executed successfully");
@@ -310,17 +307,16 @@ public class Service extends HttpServlet {
 				}
 				return true;
 			} else {
-				// Process exceed timeout or was interrupted
-				log.warn("Command execution timed-out or was interrupted");
+				// Process exceeded timeout or was interrupted
+				log.error("Andorwarn timed-out or was interrupted");
 				StringBuilder resultOutput = outputHandler.getOutput();
 				StringBuilder resultError = errorHandler.getOutput();
 				if (resultOutput != null) {
+					log.debug(resultOutput.toString());
 					output.append(resultOutput);
-					return false;
 				} else if (resultError != null) {
+					log.error(resultError.toString());
 					output.append(resultError);
-				} else {
-					output.append(Properties.toolName + " timed-out");
 				}
 				return false;
 			}
@@ -358,31 +354,36 @@ public class Service extends HttpServlet {
 		private static final String lineSeparator = System
 				.getProperty("line.separator");
 
-				IOThreadHandler(InputStream inputStream) {
-					this.inputStream = inputStream;
-				}
+		IOThreadHandler(InputStream inputStream) {
+			this.inputStream = inputStream;
+		}
 
-				public void run() {
-					Scanner br = null;
-					try {
-						br = new Scanner(new InputStreamReader(inputStream));
-						String line = null;
-						while (br.hasNextLine()) {
-							line = br.nextLine();
-							output.append(line + lineSeparator);
-						}
-					} finally {
-						br.close();
-					}
+		public void run() {
+			Scanner br = null;
+			try {
+				br = new Scanner(new InputStreamReader(inputStream));
+				String line = null;
+				while (br.hasNextLine()) {
+					line = br.nextLine();
+					output.append(line + lineSeparator);
 				}
+			} finally {
+				br.close();
+			}
+		}
 
-				public StringBuilder getOutput() {
-					return output;
-				}
+		public StringBuilder getOutput() {
+			return output;
+		}
 	}
 
 	// TODO
 	public String getTxtReport() {
+		return null;
+	}
+	
+	// TODO
+	public String getDocxReport() {
 		return null;
 	}
 

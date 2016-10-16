@@ -23,6 +23,7 @@ public enum ReportFormat {
     HTML,
     TXT,
 	PDF,
+	DOCX,
 	JSON;
 
     private static final ReportFormat[] copyOfValues = values();
