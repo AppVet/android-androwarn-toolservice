@@ -228,7 +228,7 @@ public class Service extends HttpServlet {
 		if (Properties.protocol.equals(Protocol.SYNCHRONOUS.name())) {
 			// Send back ASCII in HTTP Response
 			ReportUtil
-					.sendInHttpResponse(response, reportContent, reportStatus);
+			.sendInHttpResponse(response, reportContent, reportStatus);
 		} else if (Properties.protocol.equals(Protocol.ASYNCHRONOUS.name())) {
 			// Send report file in new HTTP Request to AppVet
 			if (FileUtil.saveReport(reportContent, reportFilePath)) {
@@ -298,19 +298,19 @@ public class Service extends HttpServlet {
 				exitValue = process.exitValue();
 				if (exitValue == 0) {
 					log.debug("Command executed successfully");
-					StringBuilder resultOut = outputHandler.getOutput();
+					StringBuffer resultOut = outputHandler.getOutput();
 					output.append(resultOut);
 				} else {
 					log.warn("Command execution failed");
-					StringBuilder resultError = errorHandler.getOutput();
+					StringBuffer resultError = errorHandler.getOutput();
 					output.append(resultError);
 				}
 				return true;
 			} else {
 				// Process exceeded timeout or was interrupted
 				log.error("Andorwarn timed-out or was interrupted");
-				StringBuilder resultOutput = outputHandler.getOutput();
-				StringBuilder resultError = errorHandler.getOutput();
+				StringBuffer resultOutput = outputHandler.getOutput();
+				StringBuffer resultError = errorHandler.getOutput();
 				if (resultOutput != null) {
 					log.debug(resultOutput.toString());
 					output.append(resultOutput);
@@ -350,7 +350,7 @@ public class Service extends HttpServlet {
 
 	private static class IOThreadHandler extends Thread {
 		private InputStream inputStream;
-		private StringBuilder output = new StringBuilder();
+		private StringBuffer output = new StringBuffer();
 		private static final String lineSeparator = System
 				.getProperty("line.separator");
 
@@ -360,19 +360,16 @@ public class Service extends HttpServlet {
 
 		public void run() {
 			Scanner br = null;
-			try {
-				br = new Scanner(new InputStreamReader(inputStream));
-				String line = null;
-				while (br.hasNextLine()) {
-					line = br.nextLine();
-					output.append(line + lineSeparator);
-				}
-			} finally {
-				br.close();
+			br = new Scanner(new InputStreamReader(inputStream));
+			String line = null;
+			while (br.hasNextLine()) {
+				line = br.nextLine();
+				output.append(line + lineSeparator);
 			}
+			br.close();
 		}
 
-		public StringBuilder getOutput() {
+		public StringBuffer getOutput() {
 			return output;
 		}
 	}
@@ -381,7 +378,7 @@ public class Service extends HttpServlet {
 	public String getTxtReport() {
 		return null;
 	}
-	
+
 	// TODO
 	public String getDocxReport() {
 		return null;
