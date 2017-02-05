@@ -19,6 +19,7 @@
  */
 package gov.nist.appvet.tool.androwarn;
 
+import gov.nist.appvet.tool.androwarn.util.LogMaintainer;
 import gov.nist.appvet.tool.androwarn.util.Logger;
 import gov.nist.appvet.tool.androwarn.util.ToolStatus;
 import gov.nist.appvet.tool.androwarn.util.Xml;
@@ -261,5 +262,9 @@ public class Properties {
 		appvetPassword = xml.getXPathValue("/Tool/AppVet/Password");
 		// log.info("/Tool/AppVet/Password: " + appvetPassword);
 
+		// Start log handler
+		LogMaintainer logMaintainer = new LogMaintainer();
+		Thread thread = new Thread(logMaintainer);
+		thread.start();
 	}
 }
