@@ -57,6 +57,7 @@ public class Properties {
 	public static String toolVersion = null;
 	public static String protocol = null;
 	public static String command = null;
+	public static String htmlToPdfCommand = null;
 	public static boolean keepApps = false;
 	public static int commandTimeout = 0;
 	public static String reportFormat = null;
@@ -200,6 +201,10 @@ public class Properties {
 		// Command
 		command = xml.getXPathValue("/Tool/Command");
 		log.info("/Tool/Command: " + command);
+		
+		// HtmlToPDF Command
+		htmlToPdfCommand = xml.getXPathValue("/Tool/HtmlToPdfCmd");
+		log.info("/Tool/HtmlToPdfCmd: " + htmlToPdfCommand);
 
 		// Keep Apps
 		keepApps = new Boolean(xml.getXPathValue("/Tool/KeepApps"))

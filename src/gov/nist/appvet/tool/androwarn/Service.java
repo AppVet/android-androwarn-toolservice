@@ -47,6 +47,7 @@ import org.apache.commons.fileupload.FileItemFactory;
 import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.apache.commons.io.FileUtils;
 
 /**
  * This class implements a synchronous tool service.
@@ -58,7 +59,8 @@ public class Service extends HttpServlet {
 	private static final Logger log = Properties.log;
 	private static String appDirPath = null;
 	private String appFilePath = null;
-	private String reportFilePath = null;
+	private String htmlFileReportPath = null;
+	private String pdfFileReportPath = null;
 	private String fileName = null;
 	private String appId = null;
 	private String command = null;
@@ -68,14 +70,14 @@ public class Service extends HttpServlet {
 	private static final String HIGH_DESCRIPTION = "Summary: \tAndrowarn found high/severe vulnerabilities.\n\n";
 	private static final String ERROR_DESCRIPTION = "Summary: \tAndrowarn encountered an error processing the app.\n\n";
 
-	/** CHANGE (START): Add expected HTTP request parameters **/
-	/** CHANGE (END): Add expected HTTP request parameters **/
 	public Service() {
 		super();
 	}
 
 	protected void doPost(HttpServletRequest request,
 			HttpServletResponse response) throws ServletException, IOException {
+		
+		// Get received HTTP parameters and file upload
 		FileItemFactory factory = new DiskFileItemFactory();
 		ServletFileUpload upload = new ServletFileUpload(factory);
 		List items = null;
@@ -100,10 +102,8 @@ public class Service extends HttpServlet {
 				if (incomingParameter.equals("appid")) {
 					appId = incomingValue;
 				}
-				/** CHANGE (START): Get other tools-specific form parameters **/
-				/** CHANGE (END): Get other tools-specific form parameters **/
 			} else {
-				// item should now hold the received file
+				// item is a file
 				if (item != null) {
 					fileItem = item;
 					log.debug("Received file: " + fileItem.getName());
@@ -120,33 +120,33 @@ public class Service extends HttpServlet {
 		if (fileItem != null) {
 			// Get app file
 			fileName = FileUtil.getFileName(fileItem.getName());
+			// Must be an APK file
 			if (!fileName.endsWith(".apk")) {
 				HttpUtil.sendHttp400(response,
 						"Invalid app file: " + fileItem.getName());
 				return;
 			}
+
 			// Create app directory
 			appDirPath = Properties.TEMP_DIR + "/" + appId;
 			File appDir = new File(appDirPath);
 			if (!appDir.exists()) {
 				appDir.mkdir();
 			}
-			// Create report path
-			reportFilePath = Properties.TEMP_DIR + "/" + appId + "/"
+
+			// Create report paths
+			htmlFileReportPath = Properties.TEMP_DIR + "/" + appId + "/"
 					+ reportName + "." + Properties.reportFormat.toLowerCase();
+			pdfFileReportPath = Properties.TEMP_DIR + "/" + appId + "/"
+					+ reportName + ".pdf";
 
 			appFilePath = Properties.TEMP_DIR + "/" + appId + "/" + fileName;
-			log.debug("App file path: " + appFilePath);
 
 			if (!FileUtil.saveFileUpload(fileItem, appFilePath)) {
-				log.error("Could not save uploaded file");
 				HttpUtil.sendHttp500(response, "Could not save uploaded file");
 				return;
-			} else {
-				log.debug(appFilePath + " saved successfully");
 			}
 		} else {
-			log.error("No app was received");
 			HttpUtil.sendHttp400(response, "No app was received.");
 			return;
 		}
@@ -155,68 +155,67 @@ public class Service extends HttpServlet {
 		// comment-out if using custom command (called by customExecute())
 		command = getCommand();
 		log.debug("Command to execute: " + command);
-		reportBuffer = new StringBuffer();
 
-		// If asynchronous, send acknowledgement back to AppVet now
+		// If asynchronous, send acknowledgement back to AppVet
 		if (Properties.protocol.equals(Protocol.ASYNCHRONOUS.name())) {
-			log.debug("Sending HTTP202 back to AppVet");
 			HttpUtil.sendHttp202(response, "Received app " + appId
 					+ " for processing.");
-		} else {
-			log.warn("Did not send HTTP202 back to AppVet. Incorrect protocol");
 		}
 
-		/*
-		 * CHANGE: Select either execute() to execute a native OS command or
-		 * customExecute() to execute your own custom code. Make sure that the
-		 * unused method call is commented-out.
-		 */
+		reportBuffer = new StringBuffer();
+
+		// Start processing app
+		log.debug("Executing Androwarn on app");
 		boolean succeeded = execute(command, reportBuffer);
-		// boolean succeeded = customExecute(reportBuffer);
+		log.debug("Finished execution Androwarn on app - succeeded: " + succeeded);
 
 		if (!succeeded) {
 			log.error("Error detected: " + reportBuffer.toString());
-			String errorReport = ReportUtil.getHtmlReport(response, fileName,
-					ToolStatus.ERROR, reportBuffer.toString(), LOW_DESCRIPTION,
-					MODERATE_DESCRIPTION, HIGH_DESCRIPTION, ERROR_DESCRIPTION);
+			String errorReport = ReportUtil
+					.getHtmlReport(
+							response,
+							fileName,
+							ToolStatus.ERROR,
+							reportBuffer.toString(),
+							LOW_DESCRIPTION,
+							MODERATE_DESCRIPTION, HIGH_DESCRIPTION, ERROR_DESCRIPTION);
+
 			// Send report to AppVet
-			if (Properties.protocol.equals(Protocol.SYNCHRONOUS.name())) {
-				// Send back ASCII in HTTP Response
-				ReportUtil.sendInHttpResponse(response, errorReport,
-						ToolStatus.ERROR);
-			} else if (Properties.protocol.equals(Protocol.ASYNCHRONOUS.name())) {
+			if (Properties.protocol.equals(Protocol.ASYNCHRONOUS.name())) {
 				// Send report file in new HTTP Request to AppVet
-				if (FileUtil.saveReport(errorReport, reportFilePath)) {
-					ReportUtil.sendInNewHttpRequest(appId, reportFilePath,
-							ToolStatus.ERROR);
+				boolean fileSaved = FileUtil.saveReport(errorReport,
+						htmlFileReportPath);
+				if (fileSaved) {
+					final StringBuffer reportBuffer = new StringBuffer();
+					boolean htmlToPdfSuccessful = execute(Properties.htmlToPdfCommand + " "
+							+ htmlFileReportPath + " " + pdfFileReportPath,
+							reportBuffer);
+					if (htmlToPdfSuccessful) {
+						ReportUtil.sendInNewHttpRequest(appId,
+								pdfFileReportPath, ToolStatus.ERROR);
+					} else {
+						log.error("Error generating PDF file "
+								+ pdfFileReportPath);
+					}
+				} else {
+					log.error("Error writing HTML report " + htmlFileReportPath);
 				}
 			}
 			return;
-		} else {
-			log.debug("Command executed successfully");
 		}
 
 		// Analyze report and generate tool status
 		log.debug("Analyzing report for " + appFilePath);
-		ToolStatus reportStatus = analyzeReport(reportBuffer
-				.toString());
+		ToolStatus reportStatus = analyzeReport(reportBuffer.toString());
 		log.debug("Result: " + reportStatus.name());
 		String reportContent = null;
 
-		// Get report
+		// Get report TODO Fix HTML requirement here
 		if (Properties.reportFormat.equals(ReportFormat.HTML.name())) {
 			reportContent = ReportUtil.getHtmlReport(response, fileName,
 					reportStatus, reportBuffer.toString(), LOW_DESCRIPTION,
 					MODERATE_DESCRIPTION, HIGH_DESCRIPTION, ERROR_DESCRIPTION);
-		} else if (Properties.reportFormat.equals(ReportFormat.TXT.name())) {
-			reportContent = getTxtReport();
-		} else if (Properties.reportFormat.equals(ReportFormat.PDF.name())) {
-			reportContent = getPdfReport();
-		} else if (Properties.reportFormat.equals(ReportFormat.DOCX.name())) {
-			reportContent = getDocxReport();
-		} else if (Properties.reportFormat.equals(ReportFormat.JSON.name())) {
-			reportContent = getJsonReport();
-		}
+		} 
 
 		// If report is null or empty, stop processing
 		if (reportContent == null || reportContent.isEmpty()) {
@@ -225,27 +224,34 @@ public class Service extends HttpServlet {
 		}
 
 		// Send report to AppVet
-		if (Properties.protocol.equals(Protocol.SYNCHRONOUS.name())) {
-			// Send back ASCII in HTTP Response
-			ReportUtil
-			.sendInHttpResponse(response, reportContent, reportStatus);
-		} else if (Properties.protocol.equals(Protocol.ASYNCHRONOUS.name())) {
+		if (Properties.protocol.equals(Protocol.ASYNCHRONOUS.name())) {
 			// Send report file in new HTTP Request to AppVet
-			if (FileUtil.saveReport(reportContent, reportFilePath)) {
-				ReportUtil.sendInNewHttpRequest(appId, reportFilePath,
-						reportStatus);
+			boolean htmlFileSaved = FileUtil.saveReport(reportContent,
+					htmlFileReportPath);
+			if (htmlFileSaved) {
+				final StringBuffer reportBuffer = new StringBuffer();
+				boolean htmlToPdfSuccessful = execute(Properties.htmlToPdfCommand + " " 
+						+ htmlFileReportPath + " " + pdfFileReportPath,
+						reportBuffer);
+				if (htmlToPdfSuccessful) {
+					ReportUtil.sendInNewHttpRequest(appId, pdfFileReportPath,
+							reportStatus);
+				} else {
+					log.error("Error generating PDF file " + pdfFileReportPath);
+				}
+			} else {
+				log.error("Error writing HTML report " + htmlFileReportPath);
 			}
 		}
 
 		// Clean up
 		if (!Properties.keepApps) {
-			if (FileUtil.deleteDirectory(new File(appDirPath))) {
-				log.debug("Deleted " + appFilePath);
-			} else {
-				log.warn("Could not delete " + appFilePath);
+			try {
+				log.debug("Removing app " + appId + " files.");
+				FileUtils.deleteDirectory(new File(appDirPath));
+			} catch (IOException ioe) {
+				log.error(ioe.getMessage());
 			}
-		} else {
-			log.warn("keepApps is set to true. Keeping app");
 		}
 
 		reportBuffer = null;
