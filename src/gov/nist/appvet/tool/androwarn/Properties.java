@@ -150,10 +150,12 @@ public class Properties {
 				+ new Boolean(LOG_TO_CONSOLE).toString());
 
 		// Log previously computed variables
-		if (toolOS != null)
-			log.info("Tool OS: " + toolOS);
-		else
+		
+		if (toolOS == null)
 			log.error("Tool OS is null!");
+		else
+			log.info("Tool OS: " + toolOS);
+
 
 		if (JAVA_HOME != null)
 			log.info("JAVA_HOME: " + JAVA_HOME);

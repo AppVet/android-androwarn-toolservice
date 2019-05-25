@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
+import java.util.Base64;
 import java.util.Date;
 
 import javax.servlet.http.HttpServletResponse;
@@ -92,10 +93,6 @@ public class ReportUtil {
 			MultipartEntity entity = new MultipartEntity();
 			entity.addPart("command",
 					new StringBody("SUBMIT_REPORT", Charset.forName("UTF-8")));
-			entity.addPart("username", new StringBody(
-					Properties.appvetUsername, Charset.forName("UTF-8")));
-			entity.addPart("password", new StringBody(
-					Properties.appvetPassword, Charset.forName("UTF-8")));
 			entity.addPart("appid",
 					new StringBody(appId, Charset.forName("UTF-8")));
 			entity.addPart("toolid",
@@ -106,6 +103,9 @@ public class ReportUtil {
 			FileBody fileBody = new FileBody(report);
 			entity.addPart("file", fileBody);
 			HttpPost httpPost = new HttpPost(Properties.appvetUrl);
+			String credentials = Base64.getEncoder().encodeToString((Properties.appvetUsername + ":" + Properties.appvetPassword).getBytes());
+			httpPost.setHeader("Authorization", "Basic " + credentials);
+
 			httpPost.setEntity(entity);
 			// Send the report to AppVet
 			log.debug("Sending report file to AppVet");
@@ -123,7 +123,7 @@ public class ReportUtil {
 	public static String getHtmlReport(HttpServletResponse response, String fileName,
 			ToolStatus reportStatus, String report,
 			String lowDescription, String moderateDescription,
-			String highDescription, String errorDescription) {
+			String highDescription, String errorDescription, boolean error) {
 		
 		String dhsLogoPath = null;
 		String appvetLogoPath = null;
@@ -194,24 +194,27 @@ public class ReportUtil {
 			htmlBuffer.append(errorDescription);
 		}
 		
-		String instructions = "<br><br>To determine the identified problems, "
-				+ "<b>search the report below for one or more of the following vulnerabilities</b>:<br>\n" + 
-				"<ul>" + 
-				"<li>Telephony identifiers exfiltration\n" + 
-				"<li>Device settings exfiltration\n" + 
-				"<li>Geolocation information leakage\n" + 
-				"<li>Connection interfaces information exfiltration\n" +
-				"<li>Telephony services abuse\n" +
-				"<li>Audio/video flow interception\n" +
-				"<li>Remote connection establishment\n" +
-				"<li>PIM data leakage\n" +
-				"<li>External memory operations\n" +
-				"<li>PIM data modification\n" +
-				"<li>Arbitrary code execution\n" +
-				"<li>Denial of Service\n" +
-				"</ul>";
-		
-		htmlBuffer.append(instructions);
+		if (!error) {
+			String instructions = "<br><br>To determine the identified problems, "
+					+ "<b>search the report below for one or more of the following vulnerabilities</b>:<br>\n" + 
+					"<ul>" + 
+					"<li>Telephony identifiers exfiltration\n" + 
+					"<li>Device settings exfiltration\n" + 
+					"<li>Geolocation information leakage\n" + 
+					"<li>Connection interfaces information exfiltration\n" +
+					"<li>Telephony services abuse\n" +
+					"<li>Audio/video flow interception\n" +
+					"<li>Remote connection establishment\n" +
+					"<li>PIM data leakage\n" +
+					"<li>External memory operations\n" +
+					"<li>PIM data modification\n" +
+					"<li>Arbitrary code execution\n" +
+					"<li>Denial of Service\n" +
+					"</ul>";
+			
+			htmlBuffer.append(instructions);
+
+		}
 		htmlBuffer.append("<h3>Details</h3>");
 		htmlBuffer.append(report);
 		htmlBuffer.append("</body>\n");

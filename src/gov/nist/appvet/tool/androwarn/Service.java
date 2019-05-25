@@ -178,7 +178,7 @@ public class Service extends HttpServlet {
 							ToolStatus.ERROR,
 							reportBuffer.toString(),
 							LOW_DESCRIPTION,
-							MODERATE_DESCRIPTION, HIGH_DESCRIPTION, ERROR_DESCRIPTION);
+							MODERATE_DESCRIPTION, HIGH_DESCRIPTION, ERROR_DESCRIPTION, true);
 
 			// Send report to AppVet
 			if (Properties.protocol.equals(Protocol.ASYNCHRONOUS.name())) {
@@ -201,6 +201,10 @@ public class Service extends HttpServlet {
 					log.error("Error writing HTML report " + htmlFileReportPath);
 				}
 			}
+			
+			// Clean up
+			// Don't clean up if app fails so we can find out what's wrong.
+			
 			return;
 		}
 
@@ -214,7 +218,7 @@ public class Service extends HttpServlet {
 		if (Properties.reportFormat.equals(ReportFormat.HTML.name())) {
 			reportContent = ReportUtil.getHtmlReport(response, fileName,
 					reportStatus, reportBuffer.toString(), LOW_DESCRIPTION,
-					MODERATE_DESCRIPTION, HIGH_DESCRIPTION, ERROR_DESCRIPTION);
+					MODERATE_DESCRIPTION, HIGH_DESCRIPTION, ERROR_DESCRIPTION, false);
 		} 
 
 		// If report is null or empty, stop processing
@@ -360,15 +364,15 @@ public class Service extends HttpServlet {
 				return true;
 			} else {
 				// Process exceeded timeout or was interrupted
-				log.error("Andorwarn timed-out or was interrupted");
+				log.error("Andorwarn timed-out or was interrupted at " + Properties.commandTimeout + "ms");
 				StringBuffer resultOutput = outputHandler.getOutput();
 				StringBuffer resultError = errorHandler.getOutput();
 				if (resultOutput != null) {
 					log.debug(resultOutput.toString());
-					output.append(resultOutput);
+					output.append(resultOutput + "\nAndorwarn timed-out or was interrupted at " + Properties.commandTimeout + "ms.");
 				} else if (resultError != null) {
 					log.error(resultError.toString());
-					output.append(resultError);
+					output.append(resultError + "\nAndorwarn timed-out or was interrupted at " + Properties.commandTimeout + "ms.");
 				}
 				return false;
 			}
