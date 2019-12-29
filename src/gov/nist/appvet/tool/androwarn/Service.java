@@ -135,7 +135,7 @@ public class Service extends HttpServlet {
 					// Check if already in hash map
 					FindingsCategory findingsCategory = findingsHashMap.get(issueData[0]);
 					if (findingsCategory == null) {
-						log.debug("Adding new category: " + issueData[0].trim());
+						//log.debug("Adding new category: " + issueData[0].trim());
 						// MAKE SURE TO TRIM DATA BEFORE USING!
 						findingsCategory = new FindingsCategory(
 								AnalysisCategory.getEnum(issueData[0].trim()));
