@@ -1,0 +1,6 @@
+Directons for installing Androwarn are here:
+
+https://topof-the-world.blogspot.com/2019/08/why-androwarn-is-best-android-app.html
+
+Instead of running 'python', you MUST use 'python3'
+

@@ -38,10 +38,6 @@ public class Properties {
 	/** Github release version number. */
 	public static final String version = "1.1";
 
-	/*
-	 * CHANGE: Declare tool-specific environment variables. Refactor
-	 * EXAMPLE_SERVICE_FILES_HOME to your environment variable name.
-	 */
 	public static String ANDROID_ANDROWARN_FILES_HOME = null;
 	public static String LOG_DISPLAY_NAME = "ANDROWARN";
 	// Defines app file path in ToolProperties.xml
@@ -56,7 +52,6 @@ public class Properties {
 	public static String toolName = null;
 	public static String toolVersion = null;
 	public static String protocol = null;
-	public static String command = null;
 	public static String htmlToPdfCommand = null;
 	public static boolean keepApps = false;
 	public static int commandTimeout = 0;
@@ -80,19 +75,23 @@ public class Properties {
 	public static String toolId = null;
 	public static String appvetUsername = null;
 	public static String appvetPassword = null;
-	/** DON'T CHANGE (END) **/
+
+
 
 	static {
+		System.out.println("Starting Androwarn");
 		String toolOS = System.getProperty("os.name");
 		JAVA_HOME = System.getenv("JAVA_HOME");
 		if (JAVA_HOME == null) {
 			System.err.println("Environment variable JAVA_HOME not set.");
-		}
+		} 
+		
 		ANDROWARN_HOME = System.getenv("ANDROWARN_HOME");
 		if (ANDROWARN_HOME == null) {
 			System.err.println("Environment variable ANDROWARN_HOME not set. "
 					+ "Please set to the installation directory of Androwarn.");
-		}
+		} 
+		
 		/* Change! Set tool-specific environment variables here */
 		ANDROID_ANDROWARN_FILES_HOME = System
 				.getenv("ANDROID_ANDROWARN_FILES_HOME");
@@ -101,7 +100,7 @@ public class Properties {
 					.println("Environment variable ANDROID_ANDROWARN_FILES_HOME not set."
 							+ "Please set to the /appvet_tools/android-androwarn-toolservice "
 							+ "directory.");
-		}
+		} 
 
 		/* CHANGE (START): Check if tool exists */
 		String androwarn = null;
@@ -110,11 +109,11 @@ public class Properties {
 		} else if (toolOS.toUpperCase().indexOf("NUX") > -1) {
 			androwarn = ANDROWARN_HOME + "/androwarn.py";
 		}
+		
 		File file = new File(androwarn);
 		if (!file.exists()) {
 			System.err.println(androwarn + " not found");
 		}
-		/* CHANGE (END): Check if tool exists */
 
 		TEMP_DIR = ANDROID_ANDROWARN_FILES_HOME + "/apps";
 		File tempDir = new File(TEMP_DIR);
@@ -146,15 +145,12 @@ public class Properties {
 		log.info("STARTING Androwarn Tool Service v" + version);
 		log.info("/Tool/Logging/LogName: " + logName);
 		log.info("/Tool/Logging/Level: " + LOG_LEVEL);
-		log.info("/Tool/Logging/ToConsole: "
+		log.info("LOGGING TO CONSOLE: "
 				+ new Boolean(LOG_TO_CONSOLE).toString());
 
 		// Log previously computed variables
 		
-		if (toolOS == null)
-			log.error("Tool OS is null!");
-		else
-			log.info("Tool OS: " + toolOS);
+		log.info("Tool OS: " + toolOS);
 
 
 		if (JAVA_HOME != null)
@@ -199,10 +195,6 @@ public class Properties {
 		// AppVet protocol
 		protocol = xml.getXPathValue("/Tool/AppVetProtocol");
 		log.info("/Tool/AppVetProtocol: " + protocol);
-
-		// Command
-		command = xml.getXPathValue("/Tool/Command");
-		log.info("/Tool/Command: " + command);
 		
 		// HtmlToPDF Command
 		htmlToPdfCommand = xml.getXPathValue("/Tool/HtmlToPdfCmd");

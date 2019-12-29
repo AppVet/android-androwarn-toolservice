@@ -1,0 +1,3 @@
+EXAMPLE CURL COMMAND TO SEND FILE TO ANDROWARN
+
+curl -v http://127.0.0.1:8080/android-androwarn-toolservice/Service --form appid=12345 --form file=@/home/steve/apps-test/android/GooglePlay/Volt_Teams_v4.0_apkpure.com.apk --form icon=@/home/steve/apps-test/android/test-icon.png 
