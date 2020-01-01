@@ -52,6 +52,7 @@ public class Properties {
 	public static String toolName = null;
 	public static String toolVersion = null;
 	public static String protocol = null;
+	public static String androwarnCmd = null;
 	public static String htmlToPdfCommand = null;
 	public static boolean keepApps = false;
 	public static int commandTimeout = 0;
@@ -196,9 +197,21 @@ public class Properties {
 		protocol = xml.getXPathValue("/Tool/AppVetProtocol");
 		log.info("/Tool/AppVetProtocol: " + protocol);
 		
+		// Main Command
+		androwarnCmd = xml.getXPathValue("/Tool/AndrowarnCmd");
+		if (androwarnCmd == null || androwarnCmd.isEmpty()) {
+			log.error("Property /Tool/AndrowarnCmd cannot be null or empty.");
+		} else {
+			log.info("/Tool/AndrowarnCmd: " + androwarnCmd);
+		}
+		
 		// HtmlToPDF Command
 		htmlToPdfCommand = xml.getXPathValue("/Tool/HtmlToPdfCmd");
-		log.info("/Tool/HtmlToPdfCmd: " + htmlToPdfCommand);
+		if (htmlToPdfCommand == null || htmlToPdfCommand.isEmpty()) {
+			log.error("Property /Tool/Cmd cannot be null or empty.");
+		} else {
+			log.info("/Tool/HtmlToPdfCmd: " + htmlToPdfCommand);
+		}
 
 		// Keep Apps
 		keepApps = new Boolean(xml.getXPathValue("/Tool/KeepApps"))

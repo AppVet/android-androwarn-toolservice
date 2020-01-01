@@ -24,7 +24,6 @@ import gov.nist.appvet.tool.androwarn.util.HttpUtil;
 import gov.nist.appvet.tool.androwarn.util.Logger;
 import gov.nist.appvet.tool.androwarn.util.Protocol;
 import gov.nist.appvet.tool.androwarn.util.SSLWrapper;
-import gov.nist.appvet.tool.androwarn.util.ToolStatus;
 import net.minidev.json.JSONArray;
 
 import java.io.BufferedReader;
@@ -274,30 +273,42 @@ public class Service extends HttpServlet {
 		// Start processing app
 		log.debug("Executing Androwarn on app");
 
-		ProcessBuilder pb = new ProcessBuilder(
-				python3Cmd,
-				Properties.ANDROWARN_HOME + "/androwarn.py",
-				"-i",
-				appFilePath,
-				"-o",
-				jsonFileReportPath,
-				"-v",
-				"3",
-				"-r",
-				"json",
-				"-d",
-				"-w"
-				);
+		// Androwarn command without args (i.e., sudo python3 androwarn.py)
+		String newCmd = Properties.androwarnCmd 
+				+ " -i " + appFilePath 
+				+ " -o " + jsonFileReportPath 
+				+ " -v 3 " 
+				+ " -r json "
+				+ " -d "
+				+ " -w ";
+		
+		String[] fullCmd = newCmd.split("\\s+");
+		ProcessBuilder pb = new ProcessBuilder(fullCmd);
 
 		// Run Androwarn and generate JSON report
-		int exitCode = runCommand(pb, 3600);
+		int exitCode = runCommand(pb, 60);
 		log.debug("Exit code for command: " + exitCode);
 		if (exitCode != 0) {
 			// All tool services require an AppVet app ID
 			HttpUtil.sendHttp500(response, "Androwarn could not execute python3 command");
 			return;
 		}
-
+		
+		// Change permissions on the file
+		pb = new ProcessBuilder(
+				"/usr/bin/sudo",
+				"/usr/bin/chown",
+				"appvet:appvet",
+				jsonFileReportPath
+				);
+		exitCode = runCommand(pb, 60);
+		log.debug("Exit code for command: " + exitCode);
+		if (exitCode != 0) {
+			// All tool services require an AppVet app ID
+			HttpUtil.sendHttp500(response, "Androwarn could not chown " + jsonFileReportPath);
+			return;
+		}
+		
 		// Read JSON result file into string
 		String json = readJsonFile(jsonFileReportPath);
 
@@ -338,14 +349,15 @@ public class Service extends HttpServlet {
 		}
 		
 		// Send to AppVet
-		//sendInNewHttpRequest(appId, pdfFileReportPath, reportStatus);
+		sendInNewHttpRequest(appId, pdfFileReportPath, avgCvss);
 		
 		// Clear structures
+		log.debug("Clearning hashmaps");
 		metadataHashMap.clear();
-		findingsHashMap.clear();
 		
 		// Clean up
 		if (!Properties.keepApps) {
+			log.debug("Removing tmp files");
 			try {
 				log.debug("Removing app " + appId + " files.");
 				FileUtils.deleteDirectory(new File(appDirPath));
@@ -358,14 +370,12 @@ public class Service extends HttpServlet {
 		System.gc();
 		log.debug("End processing");
 
-		log.debug("STOP");
-		System.exit(0);
-
 	}
 	
 	// Get app metadata - does not get 'analysis_results' here
 	public void getMetadata(String json) {
 
+		log.debug("Getting metadata");
 		//		Integer arrayLength = JsonPath.read(json, "$.length()");
 		//		log.debug("JSON array length: " + arrayLength);
 
@@ -490,6 +500,8 @@ public class Service extends HttpServlet {
 	}
 
 	public static double analyzeResults(String json, HashMap <String, FindingsCategory> findingsHashMap) {
+		
+		log.debug("Analyzing results");
 		int foundCount = 0;
 		double totalCvss = 0.0;
 		
@@ -538,7 +550,9 @@ public class Service extends HttpServlet {
 	/** This method should be used for sending files back to AppVet. */
 	public static boolean sendInNewHttpRequest(String appId,
 			String reportFilePath,
-			ToolStatus reportStatus) {
+			double toolScore) {
+		
+		log.debug("Sending report to AppVet");
 		HttpParams httpParameters = new BasicHttpParams();
 		HttpConnectionParams.setConnectionTimeout(httpParameters, 30000);
 		HttpConnectionParams.setSoTimeout(httpParameters, 1200000);
@@ -560,8 +574,10 @@ public class Service extends HttpServlet {
 					new StringBody(appId, Charset.forName("UTF-8")));
 			entity.addPart("toolid",
 					new StringBody(Properties.toolId, Charset.forName("UTF-8")));
-			entity.addPart("toolrisk", new StringBody(reportStatus.name(),
+			entity.addPart("toolscore", new StringBody(toolScore + "",
 					Charset.forName("UTF-8")));
+//			entity.addPart("toolrisk", new StringBody(reportStatus.name(),
+//					Charset.forName("UTF-8")));
 			File report = new File(reportFilePath);
 			FileBody fileBody = new FileBody(report);
 			entity.addPart("file", fileBody);
@@ -591,23 +607,30 @@ public class Service extends HttpServlet {
 		int exitCode = 1;
 		
 		try {
+			// IF INCOMING DATA IS JSON, DO NOT REDIRECT ERROR STREAM. OTHERWISE, 
+			// JSON WILL BE MIXED WITH ERROR MESSAGES!
+			pb.redirectErrorStream(true);
 			p = pb.start();
 
 			InputStream is = p.getInputStream();
+			InputStream err = p.getErrorStream();
+
 			InputStreamReader isr = new InputStreamReader(is);
+			InputStreamReader esr = new InputStreamReader(err);
 
 			// blocked
 			BufferedReader reader = new BufferedReader(isr);
 
 			String line = null;
 			while ((line = reader.readLine()) != null) {
-				//log.debug(line);
+				log.debug(line);
 			}
 
 			try {
 				p.waitFor(minutes, TimeUnit.MINUTES);
 				exitCode = p.exitValue();
-				
+				log.debug("Got exit code: " + exitCode + " executing: " + pb.command());
+
 			} catch (InterruptedException e) {
 				// Timed-out waiting for process to complete
 				Thread.currentThread().interrupt();
@@ -631,14 +654,20 @@ public class Service extends HttpServlet {
 		log.debug("Reading: " + jsonFilePath);
 
 		try {
+			log.debug("Getting FileReader");
+
 			FileReader fr = new FileReader(jsonFilePath);
+			log.debug("Getting BufferedReader");
 
 			BufferedReader reader = new BufferedReader(fr);
 
 			String line = null;
+			log.debug("Setting StringBuffer");
 			StringBuffer buf = new StringBuffer();
+			log.debug("Reading json line");
 			while ((line = reader.readLine()) != null) {
 				buf.append(line);
+				log.debug(line);
 			}
 
 			reader.close();

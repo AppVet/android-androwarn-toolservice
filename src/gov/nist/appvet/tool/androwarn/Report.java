@@ -18,6 +18,8 @@ public class Report {
 	public static String createHtml(double avgCvss, HashMap<String, ArrayList<AppMetadata>> metadataHashMap,
 			HashMap<String, FindingsCategory> findingsHashMap, 
 			String appId, String appFileIconPath) {
+		
+		log.debug("Creating HTML file");
 
 		StringBuffer htmlBuffer = new StringBuffer();
 
@@ -76,7 +78,7 @@ public class Report {
 		htmlBuffer.append("<table style=\"width: 100%; background:white;padding:0px;margin:0px;\">\n");
 		htmlBuffer.append("<tr>");
 
-		htmlBuffer.append("<td style=\"width:50%;padding:0px;margin:0px;\" align=\"left\"><img src=\"" + dhsLogoPath + "\" alt=\"DHS logo\" style=\"height: 60px;\"></td>");
+		htmlBuffer.append("<td style=\"width:50%;padding:0px;margin:0px;\" align=\"left\"><img src=\"" + dhsLogoPath + "\" alt=\"DHS logo\" style=\"height: 35px;\"></td>");
 		htmlBuffer.append("<td style=\"width:50%;padding:0px;margin:0px;\" align=\"right\"><img src=\"" + appvetLogoPath + "\" alt=\"AppVet logo\" style=\"height: 35px;\"></td>");
 
 		htmlBuffer.append("</tr>");
@@ -92,7 +94,7 @@ public class Report {
 		htmlBuffer.append("<br>");			
 
 		htmlBuffer.append("<div style=\"margin-top: 10px; font-family:arial; font-size: 30px; font-weight: 100; color: #595959;\">Androwarn Report</div>");
-		htmlBuffer.append("<div style=\"font-family:arial; font-size: 16px; font-weight: 100; color: #595959;\"><a href=\"https://github.com/maaaaz/androwarn\">https://github.com/maaaaz/androwarn</a></div>");
+		htmlBuffer.append("<div style=\"text-decoration: none; font-family:arial; font-size: 16px; font-weight: 50; color: #a6a6a6;\">https://github.com/maaaaz/androwarn</div>");
 
 		
 		htmlBuffer.append("</center>");
@@ -104,7 +106,7 @@ public class Report {
 		htmlBuffer.append("<table class=\"tableIcon\">\n");
 
 		htmlBuffer.append("<tr>");
-		htmlBuffer.append("<td rowspan = \"2\"> <img src=\"" + appFileIconPath + "\" height=\"100px\" /> </td>");
+		htmlBuffer.append("<td rowspan = \"2\"> <img src=\"" + appFileIconPath + "\" height=\"80px\" /> </td>");
 		htmlBuffer.append("<td style=\"font-family:arial;font-size:36px;padding-left:20px;\">" 
 				+ getAllValues("application_name", metadataHashMap) + "</td>");
 		htmlBuffer.append("</tr>");
