@@ -98,71 +98,7 @@ public class Service extends HttpServlet {
 			wkhtmltopdfCmd = Properties.htmlToPdfCommand;
 		}
 
-		loadCvssData();
 	}
-
-	private static void loadCvssData() {
-		// Read in CVSS data file
-		String filePath = Properties.CONF_DIR + "/androwarn_cvss_3.1_scores.txt";
-		File file = new File(filePath); 
-		if (!file.exists()) {
-			log.error("Could not find CVSS properties file: " + filePath);
-		}
-		
-		try {
-
-			BufferedReader br = new BufferedReader(new FileReader(file)); 
-
-			String str; 
-			while ((str = br.readLine()) != null) {
-				//System.out.println("line: " + str); 
-				if (str != null && !str.startsWith("#") && !str.trim().isEmpty()) {
-					String[] issueData = str.split(";");
-					log.debug("\nCATEGORY: " + issueData[0]);
-					if (issueData[0] == null)
-						log.error("Read null category from cvss file");
-					log.debug("\nISSUE: " + issueData[1]);
-					if (issueData[1] == null)
-						log.error("Read null issue from cvss file");
-					log.debug("\nVECTOR: " + issueData[2]);
-					if (issueData[2] == null)
-						log.error("Read null vector from cvss file");
-					log.debug("\nCVSS: " + issueData[3]);
-					if (issueData[0] == null)
-						log.error("Read null base score from cvss file");
-					
-					// Check if already in hash map
-					FindingsCategory findingsCategory = findingsHashMap.get(issueData[0]);
-					if (findingsCategory == null) {
-						//log.debug("Adding new category: " + issueData[0].trim());
-						// MAKE SURE TO TRIM DATA BEFORE USING!
-						findingsCategory = new FindingsCategory(
-								AnalysisCategory.getEnum(issueData[0].trim()));
-						DefinedIssue issue = new DefinedIssue(issueData[1], 
-								issueData[2], 
-								new Double(issueData[3]));
-						findingsCategory.definedIssues.add(issue);
-						
-						findingsHashMap.put(issueData[0].trim(), findingsCategory);
-						
-					} else {
-						log.debug("Updating category: " + issueData[0].trim());
-						DefinedIssue issue = new DefinedIssue(issueData[1], 
-								issueData[2], 
-								new Double(issueData[3]));
-						findingsCategory.definedIssues.add(issue);
-						
-					}
-				}
-			}
-
-			br.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		} 
-	}
-	
-
 
 	protected void doPost(HttpServletRequest request,
 			HttpServletResponse response) throws ServletException, IOException {
@@ -204,8 +140,6 @@ public class Service extends HttpServlet {
 						iconFileItem = item;
 						log.debug("Received icon: " + iconFileItem.getName());
 					}
-				} else {
-					log.warn("Item is null");
 				}
 			}
 		}
@@ -269,6 +203,10 @@ public class Service extends HttpServlet {
 			HttpUtil.sendHttp202(response, "Received app " + appId
 					+ " for processing.");
 		}
+		
+		// Load known vulnerabilities
+		log.debug("Loading CVSS data");
+		loadCvssData();
 
 		// Start processing app
 		log.debug("Executing Androwarn on app");
@@ -354,6 +292,7 @@ public class Service extends HttpServlet {
 		// Clear structures
 		log.debug("Clearning hashmaps");
 		metadataHashMap.clear();
+		findingsHashMap.clear();
 		
 		// Clean up
 		if (!Properties.keepApps) {
@@ -370,6 +309,67 @@ public class Service extends HttpServlet {
 		System.gc();
 		log.debug("End processing");
 
+	}
+	
+	private static void loadCvssData() {
+		// Read in CVSS data file
+		String filePath = Properties.CONF_DIR + "/androwarn_cvss_3.1_scores.txt";
+		File file = new File(filePath); 
+		if (!file.exists()) {
+			log.error("Could not find CVSS properties file: " + filePath);
+		}
+		
+		try {
+
+			BufferedReader br = new BufferedReader(new FileReader(file)); 
+
+			String str; 
+			while ((str = br.readLine()) != null) {
+				//System.out.println("line: " + str); 
+				if (str != null && !str.startsWith("#") && !str.trim().isEmpty()) {
+					String[] issueData = str.split(";");
+					log.debug("\nCATEGORY: " + issueData[0]);
+					if (issueData[0] == null)
+						log.error("Read null category from cvss file");
+					log.debug("\nISSUE: " + issueData[1]);
+					if (issueData[1] == null)
+						log.error("Read null issue from cvss file");
+					log.debug("\nVECTOR: " + issueData[2]);
+					if (issueData[2] == null)
+						log.error("Read null vector from cvss file");
+					log.debug("\nCVSS: " + issueData[3]);
+					if (issueData[0] == null)
+						log.error("Read null base score from cvss file");
+					
+					// Check if already in hash map
+					FindingsCategory findingsCategory = findingsHashMap.get(issueData[0]);
+					if (findingsCategory == null) {
+						//log.debug("Adding new category: " + issueData[0].trim());
+						// MAKE SURE TO TRIM DATA BEFORE USING!
+						findingsCategory = new FindingsCategory(
+								AnalysisCategory.getEnum(issueData[0].trim()));
+						DefinedIssue issue = new DefinedIssue(issueData[1], 
+								issueData[2], 
+								new Double(issueData[3]));
+						findingsCategory.definedIssues.add(issue);
+						
+						findingsHashMap.put(issueData[0].trim(), findingsCategory);
+						
+					} else {
+						log.debug("Updating category: " + issueData[0].trim());
+						DefinedIssue issue = new DefinedIssue(issueData[1], 
+								issueData[2], 
+								new Double(issueData[3]));
+						findingsCategory.definedIssues.add(issue);
+						
+					}
+				}
+			}
+
+			br.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} 
 	}
 	
 	// Get app metadata - does not get 'analysis_results' here
