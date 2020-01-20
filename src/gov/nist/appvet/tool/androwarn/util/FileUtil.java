@@ -30,9 +30,7 @@ import java.nio.file.StandardCopyOption;
 
 import org.apache.commons.fileupload.FileItem;
 
-/**
- * @author steveq@nist.gov
- */
+
 public class FileUtil {
 	private static final Logger log = Properties.log;
 

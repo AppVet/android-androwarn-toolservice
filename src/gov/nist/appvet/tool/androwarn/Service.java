@@ -542,7 +542,7 @@ public class Service extends HttpServlet {
 		
 		log.debug("Total CVSS found: " + foundCount);
 		log.debug("Total CVSS: " + totalCvss);
-		double avgCvss = totalCvss / foundCount;
+		double avgCvss = (double) totalCvss / foundCount;
 		log.debug("Average: " + avgCvss);
 		return avgCvss;
 	}

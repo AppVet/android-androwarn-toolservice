@@ -122,7 +122,7 @@ public class Report {
 		htmlBuffer.append("<table class=\"tableIcon\">\n");
 
 		htmlBuffer.append("<tr>\n");
-		htmlBuffer.append("<td witdh=\"50px\" class=\"riskScore\" style=\"font-size: 22px; font-weight: bold; color:gray; \">Severity&nbsp;&nbsp;</td>\n");
+		htmlBuffer.append("<td witdh=\"50px\" class=\"riskScore\" style=\"font-size: 22px; font-weight: bold; color:gray; \">Score&nbsp;&nbsp;</td>\n");
 
 
 		String strDouble = String.format("%.2f", avgCvss);
@@ -214,7 +214,7 @@ public class Report {
 					htmlBuffer.append("<tr>\n");
 					htmlBuffer.append("<th width=\"40%\" >Issue</th>\n");
 					htmlBuffer.append("<th style=\"padding-left: 10px;\" width=\"35%\" >CVSS Vector</th>\n");
-					htmlBuffer.append("<th width=\"15%\" >Severity</th>\n");
+					htmlBuffer.append("<th width=\"15%\" >Score</th>\n");
 					htmlBuffer.append("</tr>\n");
 				}
 				

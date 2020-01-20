@@ -31,7 +31,6 @@ import java.util.ArrayList;
  * This class reads in property values defined in ToolProperties.xml as well as
  * required environment variables from the host system.
  * 
- * @author steveq@nist.gov
  */
 public class Properties {
 
