@@ -97,7 +97,6 @@ public class Service extends HttpServlet {
 			python3Cmd = "python3";
 			wkhtmltopdfCmd = Properties.htmlToPdfCommand;
 		}
-
 	}
 
 	protected void doPost(HttpServletRequest request,
