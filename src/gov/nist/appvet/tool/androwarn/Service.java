@@ -22,7 +22,7 @@ package gov.nist.appvet.tool.androwarn;
 import gov.nist.appvet.tool.androwarn.util.FileUtil;
 import gov.nist.appvet.tool.androwarn.util.HttpUtil;
 import gov.nist.appvet.tool.androwarn.util.Logger;
-import gov.nist.appvet.tool.androwarn.util.Protocol;
+import gov.nist.appvet.tool.androwarn.util.Native;
 import gov.nist.appvet.tool.androwarn.util.SSLWrapper;
 import net.minidev.json.JSONArray;
 
@@ -30,8 +30,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -40,7 +38,6 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -49,7 +46,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileItemFactory;
-import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.apache.commons.io.FileUtils;
@@ -84,6 +80,7 @@ public class Service extends HttpServlet {
 	
 	public static HashMap<String, ArrayList<AppMetadata>> metadataHashMap = new HashMap<String, ArrayList<AppMetadata>>();
 	public static HashMap<String, FindingsCategory> findingsHashMap = new HashMap<String, FindingsCategory>();
+	public Native cmd = null;
 
 
 	public Service() {
@@ -97,52 +94,97 @@ public class Service extends HttpServlet {
 			python3Cmd = "python3";
 			wkhtmltopdfCmd = Properties.htmlToPdfCommand;
 		}
+		
+		this.cmd = new Native(Properties.log);
+
 	}
 
 	protected void doPost(HttpServletRequest request,
 			HttpServletResponse response) throws ServletException, IOException {
 
 		// Get received HTTP parameters and file upload
+		String appFilePath = null;
+		String appIconFilePath = null;
+		String htmlFileReportPath = null;
+		String pdfFileReportPath = null;
+		String fileName = null;
+		String appId = null;
+		String appName = null;
+		String appOs = null;
+		String appPackage = null;
+		String appVersion = null;
+		String appSha256 = null;
+		String appStoreUrl = null;
+
+		// Get received HTTP parameters and file upload
 		FileItemFactory factory = new DiskFileItemFactory();
 		ServletFileUpload upload = new ServletFileUpload(factory);
 		List<FileItem> items = null;
-		FileItem appFileItem = null;
 		FileItem iconFileItem = null;
+		FileItem appFileItem = null;
+		HashMap<String, Value> appMetadataHashMap = new HashMap<String, Value>();
 
 		try {
 			items = upload.parseRequest(request);
-		} catch (FileUploadException e) {
-			e.printStackTrace();
-		}
 
-		// Get received items
-		Iterator<FileItem> iter = items.iterator();
-		FileItem item = null;
+			/* Get received items */
+			Iterator<FileItem> iter = items.iterator();
+			FileItem item = null;
 
-		// Get all incoming parameters
-		while (iter.hasNext()) {
-			item = (FileItem) iter.next();
-			if (item.isFormField()) {
-				// Get HTML form parameters
-				String incomingParameter = item.getFieldName();
-				String incomingValue = item.getString();
-				if (incomingParameter.equals("appid")) {
-					appId = incomingValue;
-				}
-			} else {
-				// item is a file
-				if (item != null) {
-					if (item.getName().endsWith(".apk")) {
-						appFileItem = item;
-						log.debug("Received app: " + appFileItem.getName());
-					} else if (item.getName().endsWith(".png")){
-						iconFileItem = item;
-						log.debug("Received icon: " + iconFileItem.getName());
+			while (iter.hasNext()) {
+				item = (FileItem) iter.next();
+				//log.debug("Got item: " + item.getName());
+				if (item.isFormField()) {
+					// Get HTML form parameters
+					String incomingParameter = item.getFieldName();
+					String incomingValue = item.getString();
+
+					log.debug("Received " + incomingParameter + " = " + incomingValue);
+					if (incomingParameter.equals("appid")) {
+						appId = incomingValue;
+						appMetadataHashMap.put("appid", new Value(incomingValue, Value.DataType.STRING, Value.InfoType.METADATA));
+					} else if (incomingParameter.equals("appname")) {
+						appName = incomingValue;
+						appMetadataHashMap.put("application_name", new Value(incomingValue, Value.DataType.STRING, Value.InfoType.METADATA));
+					} else if (incomingParameter.equals("appos")) {
+						appOs = incomingValue;
+						appMetadataHashMap.put("appos", new Value(incomingValue, Value.DataType.STRING, Value.InfoType.METADATA));
+					} else if (incomingParameter.equals("apppackage")) {
+						appPackage = incomingValue;
+						appMetadataHashMap.put("package_name", new Value(incomingValue, Value.DataType.STRING, Value.InfoType.METADATA));
+					} else if (incomingParameter.equals("appversion")) {
+						appVersion = incomingValue;
+						appMetadataHashMap.put("application_version", new Value(incomingValue, Value.DataType.STRING, Value.InfoType.METADATA));
+					} else if (incomingParameter.equals("appsha")) {
+						appSha256 = incomingValue;
+						appMetadataHashMap.put("fingerprint", new Value(incomingValue, Value.DataType.STRING, Value.InfoType.METADATA));
+					} else if (incomingParameter.equals("appstoreurl")) {
+						appStoreUrl = incomingValue;
+						appMetadataHashMap.put("appstoreurl", new Value(incomingValue, Value.DataType.STRING, Value.InfoType.METADATA));
+					} 					
+				} else {
+					//String incomingParameter = item.getFieldName();
+					//log.debug("Received file " + incomingParameter);
+					// item is a file
+					if (item != null) {
+						log.debug("Received file: " + item.getName());
+
+						if (item.getName().endsWith(".apk") || item.getName().endsWith(".ipa")) {
+							appFileItem = item;
+							appMetadataHashMap.put("file_name", new Value(appFileItem.getName(), Value.DataType.STRING, Value.InfoType.METADATA));
+							log.debug("Received app file: " + appFileItem.getName());
+						} else if (item.getName().endsWith(".png")) {
+							iconFileItem = item;
+							log.debug("Received icon file: " + iconFileItem.getName());
+						} else {
+							log.warn("Ignoring received file " + item.getName());
+						}
 					}
 				}
 			}
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
-
 
 		if (appId == null) {
 			// All tool services require an AppVet app ID
@@ -150,58 +192,59 @@ public class Service extends HttpServlet {
 			return;
 		}
 
-		if (appFileItem != null && iconFileItem != null) {
+		// Create app directory
+		appDirPath = Properties.TEMP_DIR + "/" + appId;
+		
+		File appDir = new File(appDirPath);
+		if (!appDir.exists()) {
+			appDir.mkdir();
+		}
+		
+		if (appFileItem != null) {
+
 			// Get app file
 			fileName = FileUtil.getFileName(appFileItem.getName());
+			
+			appFilePath = appDirPath + "/" + fileName;
+			log.debug("APP FILE PATH: " + appFilePath);
+			
 			// Must be an APK file
 			if (!fileName.endsWith(".apk")) {
 				HttpUtil.sendHttp400(response,
 						"Invalid app file: " + appFileItem.getName());
 				return;
 			}
-
-			// Create app directory
-			appDirPath = Properties.TEMP_DIR + "/" + appId;
-
-			File appDir = new File(appDirPath);
-			if (!appDir.exists()) {
-				appDir.mkdir();
-			}
-
-			// Set paths
-			appFilePath = appDirPath + "/" + fileName;
-			log.debug("APP FILE PATH: " + appFilePath);
-			appIconFilePath = appDirPath + "/icon.png";
-			log.debug("APP ICON PATH: " + appIconFilePath);
-			jsonFileReportPath = appDirPath + "/report.json";
-			log.debug("JSON REPORT PATH: " + jsonFileReportPath);
-
-			htmlFileReportPath = appDirPath + "/report.html";
-			log.debug("HTML REPORT PATH: " + htmlFileReportPath);
-
-			pdfFileReportPath = appDirPath + "/report.pdf";
-			log.debug("PDF REPORT PATH: " + pdfFileReportPath);
-
+	
 			if (!FileUtil.saveFileUpload(appFileItem, appFilePath)) {
 				HttpUtil.sendHttp500(response, "Could not save app");
 				return;
 			}
-
+		}
+			
+		if (iconFileItem != null) {
+			
+			appIconFilePath = appDirPath + "/icon.png";
+			log.debug("APP ICON PATH: " + appIconFilePath);
+			
 			if (!FileUtil.saveFileUpload(iconFileItem, appIconFilePath)) {
 				HttpUtil.sendHttp500(response, "Could not save icon");
 				return;
 			}
-
-		} else {
-			HttpUtil.sendHttp400(response, "No app or icon was received.");
-			return;
+			
 		}
+		
+		jsonFileReportPath = appDirPath + "/report.json";
+		log.debug("JSON REPORT PATH: " + jsonFileReportPath);
+		
+		htmlFileReportPath = appDirPath + "/report.html";
+		log.debug("HTML REPORT PATH: " + htmlFileReportPath);
+
+		pdfFileReportPath = appDirPath + "/report.pdf";
+		log.debug("PDF REPORT PATH: " + pdfFileReportPath);
 
 		// Send acknowledgement back to AppVet
-		if (Properties.protocol.equals(Protocol.ASYNCHRONOUS.name())) {
-			HttpUtil.sendHttp202(response, "Received app " + appId
-					+ " for processing.");
-		}
+		HttpUtil.sendHttp202(response, "Received app " + appId
+				+ " for processing.");
 		
 		// Load known vulnerabilities
 		log.debug("Loading CVSS data");
@@ -221,13 +264,29 @@ public class Service extends HttpServlet {
 		
 		String[] fullCmd = newCmd.split("\\s+");
 		ProcessBuilder pb = new ProcessBuilder(fullCmd);
+		
+//		ProcessBuilder pb = new ProcessBuilder(
+//				Properties.androwarnCmd,
+//				"-i",
+//				appFilePath,
+//				"-o",
+//				jsonFileReportPath,
+//				"-v",
+//				"3", 
+//				"-r",
+//				"json",
+//				"-d",
+//				"-w"
+//				);
 
 		// Run Androwarn and generate JSON report
-		int exitCode = runCommand(pb, 60);
-		log.debug("Exit code for command: " + exitCode);
-		if (exitCode != 0) {
+		String waitSeconds = "1800"; // 30 minutes
+		StringBuffer result = new StringBuffer();
+		int exitValue = cmd.exec(pb, new Integer(waitSeconds).intValue(), result);
+
+		if (exitValue != 0) {
 			// All tool services require an AppVet app ID
-			HttpUtil.sendHttp500(response, "Androwarn could not execute python3 command");
+			sendErrorReport(result.toString(), htmlFileReportPath, pdfFileReportPath);
 			return;
 		}
 		
@@ -238,11 +297,12 @@ public class Service extends HttpServlet {
 				"appvet:appvet",
 				jsonFileReportPath
 				);
-		exitCode = runCommand(pb, 60);
-		log.debug("Exit code for command: " + exitCode);
-		if (exitCode != 0) {
+		result = new StringBuffer();
+		exitValue = cmd.exec(pb, new Integer(waitSeconds).intValue(), result);
+
+		if (exitValue != 0) {
 			// All tool services require an AppVet app ID
-			HttpUtil.sendHttp500(response, "Androwarn could not chown " + jsonFileReportPath);
+			sendErrorReport(result.toString(), htmlFileReportPath, pdfFileReportPath);
 			return;
 		}
 		
@@ -255,17 +315,20 @@ public class Service extends HttpServlet {
 			return;
 		}
 
-
 		// Get metadata from results
 		getMetadata(json);
 		
 		// Scan for issue in JSON string (no need to parse JSON)
 		double avgCvss = analyzeResults(json, findingsHashMap);
-
-
 		
 		// Create HTML report
-		String htmlReport = Report.createHtml(avgCvss, metadataHashMap, findingsHashMap, appId, appIconFilePath);
+		String htmlReport = 
+				Report.createHtml(avgCvss, 
+						metadataHashMap, 
+						findingsHashMap, 
+						appId, 
+						appIconFilePath,
+						null);
 		if (!FileUtil.saveReport(htmlReport, htmlFileReportPath)) {
 			HttpUtil.sendHttp500(response, "Androwarn could not save HTML report");
 			return;
@@ -277,11 +340,13 @@ public class Service extends HttpServlet {
 				htmlFileReportPath,
 				pdfFileReportPath
 				);
-		exitCode = runCommand(pb, 60);
-		log.debug("Exit code for command: " + exitCode);
-		if (exitCode != 0) {
+		result = new StringBuffer();
+		exitValue = cmd.exec(pb, new Integer(waitSeconds).intValue(), result);
+
+		if (exitValue != 0) {
 			// All tool services require an AppVet app ID
-			HttpUtil.sendHttp500(response, "Androwarn could not execute wkhtmltopdf");
+			log.debug(result.toString());
+			sendErrorReport(result.toString(), htmlFileReportPath, pdfFileReportPath);
 			return;
 		}
 		
@@ -289,7 +354,7 @@ public class Service extends HttpServlet {
 		sendInNewHttpRequest(appId, pdfFileReportPath, avgCvss);
 		
 		// Clear structures
-		log.debug("Clearning hashmaps");
+		log.debug("Clearing hashmaps");
 		metadataHashMap.clear();
 		findingsHashMap.clear();
 		
@@ -308,6 +373,51 @@ public class Service extends HttpServlet {
 		System.gc();
 		log.debug("End processing");
 
+	}
+	
+	public void sendErrorReport(String errorMessage, String htmlFileReportPath, String pdfFileReportPath) {
+		
+		log.debug("Writing error message: " + errorMessage);
+		
+		String htmlReport = 
+				Report.createHtml(-1.0, 
+						metadataHashMap, 
+						null, 
+						appId, 
+						appIconFilePath,
+						errorMessage);
+		
+		log.debug("Saving report");
+
+		if (!FileUtil.saveReport(htmlReport, htmlFileReportPath)) {
+			log.error("Could not generate HTML report.");
+			return;
+		}
+		
+		log.debug("Generating PDF");
+
+		// Generate PDF file from HTML report
+		ProcessBuilder pb = new ProcessBuilder(
+				wkhtmltopdfCmd,
+				htmlFileReportPath,
+				pdfFileReportPath
+				);
+		String waitSeconds = "1800"; // 30 minutes
+		StringBuffer result = new StringBuffer();
+		int exitValue = cmd.exec(pb, new Integer(waitSeconds).intValue(), result);
+		
+		if (exitValue != 0) {
+			// All tool services require an AppVet app ID
+			log.debug(result.toString());
+
+			log.error("Could not generate PDF");
+			return;
+		}
+		
+		log.debug("Sending report to AppVet");
+
+		// Send to AppVet
+		sendInNewHttpRequest(appId, pdfFileReportPath, -1.0);
 	}
 	
 	private static void loadCvssData() {
@@ -599,55 +709,58 @@ public class Service extends HttpServlet {
 	}
 
 	/** Note that no error stream is captured. */
-	public static int runCommand(ProcessBuilder pb, int minutes) {
-		log.debug("Executing: " + pb.command());
-
-		Process p = null;
-		int exitCode = 1;
-		
-		try {
-			// IF INCOMING DATA IS JSON, DO NOT REDIRECT ERROR STREAM. OTHERWISE, 
-			// JSON WILL BE MIXED WITH ERROR MESSAGES!
-			pb.redirectErrorStream(true);
-			p = pb.start();
-
-			InputStream is = p.getInputStream();
-			InputStream err = p.getErrorStream();
-
-			InputStreamReader isr = new InputStreamReader(is);
-			InputStreamReader esr = new InputStreamReader(err);
-
-			// blocked
-			BufferedReader reader = new BufferedReader(isr);
-
-			String line = null;
-			while ((line = reader.readLine()) != null) {
-				log.debug(line);
-			}
-
-			try {
-				p.waitFor(minutes, TimeUnit.MINUTES);
-				exitCode = p.exitValue();
-				log.debug("Got exit code: " + exitCode + " executing: " + pb.command());
-
-			} catch (InterruptedException e) {
-				// Timed-out waiting for process to complete
-				Thread.currentThread().interrupt();
-				log.error("Process timed-out executing: " + pb.command());
-			}
-			   
-			reader.close();
-			isr.close();
-			is.close();
-
-			return exitCode;
-		} catch (IOException e) {
-			e.printStackTrace();
-		} finally {
-			p.destroy();
-		}
-		return 1;
-	}
+//	public static int runCommand(ProcessBuilder pb, int minutes, StringBuffer buf) {
+//		log.debug("Executing: " + pb.command());
+//
+//		Process p = null;
+//		int exitCode = 1;
+//		
+//		try {
+//			// IF INCOMING DATA IS JSON, DO NOT REDIRECT ERROR STREAM. OTHERWISE, 
+//			// JSON WILL BE MIXED WITH ERROR MESSAGES!
+//			pb.redirectErrorStream(true);
+//			p = pb.start();
+//
+//			InputStream is = p.getInputStream();
+//			InputStream err = p.getErrorStream();
+//
+//			InputStreamReader isr = new InputStreamReader(is);
+//			InputStreamReader esr = new InputStreamReader(err);
+//
+//			// blocked
+//			BufferedReader reader = new BufferedReader(isr);
+//
+//			String line = null;
+//			while ((line = reader.readLine()) != null) {
+//				//log.debug(line);
+//			}
+//
+//			try {
+//				p.waitFor(minutes, TimeUnit.MINUTES);
+//				exitCode = p.exitValue();
+//				log.debug("Got exit code: " + exitCode + " executing: " + pb.command());
+//				if (exitCode == 0) {
+//					buf.append()
+//				}
+//
+//			} catch (InterruptedException e) {
+//				// Timed-out waiting for process to complete
+//				Thread.currentThread().interrupt();
+//				log.error("Process timed-out executing: " + pb.command());
+//			}
+//			   
+//			reader.close();
+//			isr.close();
+//			is.close();
+//
+//			return exitCode;
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		} finally {
+//			p.destroy();
+//		}
+//		return 1;
+//	}
 
 	public static String readJsonFile(String jsonFilePath) {
 		log.debug("Reading: " + jsonFilePath);

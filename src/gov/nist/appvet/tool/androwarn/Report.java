@@ -17,7 +17,7 @@ public class Report {
 
 	public static String createHtml(double avgCvss, HashMap<String, ArrayList<AppMetadata>> metadataHashMap,
 			HashMap<String, FindingsCategory> findingsHashMap, 
-			String appId, String appFileIconPath) {
+			String appId, String appFileIconPath, String errorMessage) {
 		
 		log.debug("Creating HTML file");
 
@@ -40,6 +40,8 @@ public class Report {
 			appvetLogoPath = imagesPath + "/appvet.png";
 			androwarnLogoPath = imagesPath + "/androwarn.png";
 		}
+
+		log.debug("Creating HTML header");
 
 		//StringBuffer htmlBuffer = new StringBuffer();
 		htmlBuffer.append("<HTML>\n");
@@ -69,6 +71,7 @@ public class Report {
 		htmlBuffer.append("</style>\n");
 
 		//--------------------------- Page Title -----------------------------
+		log.debug("Creating HTML title and banner");
 
 		htmlBuffer.append("<title> Androwarn Report for " + appId + "</title>\n");
 		htmlBuffer.append("</head>\n");
@@ -103,6 +106,8 @@ public class Report {
 		htmlBuffer.append("<br><br>\n");
 
 		//------------------- Appname, version and logo ----------------------
+		log.debug("Creating app name, version and logo");
+
 		htmlBuffer.append("<table class=\"tableIcon\">\n");
 
 		htmlBuffer.append("<tr>");
@@ -127,7 +132,9 @@ public class Report {
 
 		String strDouble = String.format("%.2f", avgCvss);
 
-		if (avgCvss >= 0 && avgCvss < 4.0) {
+		if (avgCvss == -1) {
+			htmlBuffer.append("<td class=\"itemValue\" style=\"font-size: 22px; font-weight: bold; color: green;\">ERROR</td>\n");
+		} else if (avgCvss >= 0 && avgCvss < 4.0) {
 			htmlBuffer.append("<td class=\"itemValue\" style=\"font-size: 22px; font-weight: bold; color: green;\">" + strDouble + " (LOW) </td>\n");
 		} else if (avgCvss >= 4.0 && avgCvss < 7.0) {
 			htmlBuffer.append("<td class=\"itemValue\" style=\"font-size: 22px; font-weight: bold; color: orange;\">" + strDouble + " (MEDIUM) </td>\n");
@@ -140,6 +147,8 @@ public class Report {
 		htmlBuffer.append("</table>");
 
 		//----------------------------------- Metadata ----------------------------------------
+		log.debug("Creating metadata");
+
 		htmlBuffer.append("<table class=\"tableIcon\">\n");
 
 		htmlBuffer.append("<tr>\n");
@@ -178,93 +187,109 @@ public class Report {
 		htmlBuffer.append("<td class=\"itemValue\">" + getAllValues("fingerprint", metadataHashMap) + "</td>\n");
 		htmlBuffer.append("</tr>\n");
 
-		htmlBuffer.append("<tr>\n");
-		htmlBuffer.append("<td class=\"itemName\">Certificate: </td>\n");
-		htmlBuffer.append("<td class=\"itemValue\">" + getValue("certificate_information", "Common Name:", metadataHashMap) + "</td>\n");
-		htmlBuffer.append("</tr>\n");
-
+		if (errorMessage == null) {
+			htmlBuffer.append("<tr>\n");
+			htmlBuffer.append("<td class=\"itemName\">Certificate: </td>\n");
+			htmlBuffer.append("<td class=\"itemValue\">" + getValue("certificate_information", "Common Name:", metadataHashMap) + "</td>\n");
+			htmlBuffer.append("</tr>\n");
+		}
 
 		htmlBuffer.append("</tr>\n");
 		htmlBuffer.append("</table>\n");
 
 		//----------------------------------- Findings ----------------------------------------
 
-		htmlBuffer.append("<h2 style=\"margin-left:40px;color:gray;\">Findings Summary</h2>");
+		if (errorMessage == null) {
+			log.debug("Creating findings");
 
-		String currentCategory = "";
+			htmlBuffer.append("<h2 style=\"margin-left:40px;color:gray;\">Findings Summary</h2>");
 
-		for (Map.Entry<String, FindingsCategory> mapElement : findingsHashMap.entrySet()) { 
+			String currentCategory = "";
 
-			String issueCategory = (String) mapElement.getKey(); 
-			FindingsCategory findingsCategory = mapElement.getValue();
-			//			String xx = findingsCategory.issue;
-			//			String cvssVector = findingsCategory.cvssVectorStr;
-			//			double cvssBaseScore = findingsCategory.cvssBaseScore;
-			if (findingsCategory.getNumIssuesFound() > 0) {
-				
-				if (!currentCategory.equals(issueCategory)) {
-					currentCategory = issueCategory;
+			for (Map.Entry<String, FindingsCategory> mapElement : findingsHashMap.entrySet()) { 
 
-					System.out.println("Printing category header: " + issueCategory);
-					System.out.println("Num defined issues: " + findingsCategory.definedIssues.size());
+				String issueCategory = (String) mapElement.getKey(); 
+				FindingsCategory findingsCategory = mapElement.getValue();
+				//			String xx = findingsCategory.issue;
+				//			String cvssVector = findingsCategory.cvssVectorStr;
+				//			double cvssBaseScore = findingsCategory.cvssBaseScore;
+				if (findingsCategory.getNumIssuesFound() > 0) {
+					
+					if (!currentCategory.equals(issueCategory)) {
+						currentCategory = issueCategory;
 
-					htmlBuffer.append("<h3 style=\"padding: 5px; margin-left:40px; color: white; background-color: #0099ff;\">" 
-							+ AnalysisCategory.getEnum(issueCategory).formalName + "</h3>\n");
-					htmlBuffer.append("<table class=\"tableMain\" width=\"100%\">\n");
-					htmlBuffer.append("<tr>\n");
-					htmlBuffer.append("<th width=\"40%\" >Issue</th>\n");
-					htmlBuffer.append("<th style=\"padding-left: 10px;\" width=\"35%\" >CVSS Vector</th>\n");
-					htmlBuffer.append("<th width=\"15%\" >Score</th>\n");
-					htmlBuffer.append("</tr>\n");
-				}
-				
-				for (int i = 0; i < findingsCategory.definedIssues.size(); i++) {
+						System.out.println("Printing category header: " + issueCategory);
+						System.out.println("Num defined issues: " + findingsCategory.definedIssues.size());
 
-					DefinedIssue knownIssue = findingsCategory.definedIssues.get(i);
-					String cvssVector = knownIssue.cvssVectorStr;
-					double cvssBaseScore = knownIssue.cvssBaseScore;
+						htmlBuffer.append("<h3 style=\"padding: 5px; margin-left:40px; color: white; background-color: #0099ff;\">" 
+								+ AnalysisCategory.getEnum(issueCategory).formalName + "</h3>\n");
+						htmlBuffer.append("<table class=\"tableMain\" width=\"100%\">\n");
+						htmlBuffer.append("<tr>\n");
+						htmlBuffer.append("<th width=\"40%\" >Issue</th>\n");
+						htmlBuffer.append("<th style=\"padding-left: 10px;\" width=\"35%\" >CVSS Vector</th>\n");
+						htmlBuffer.append("<th width=\"15%\" >Score</th>\n");
+						htmlBuffer.append("</tr>\n");
+					}
+					
+					for (int i = 0; i < findingsCategory.definedIssues.size(); i++) {
 
-					log.debug("Detected num issues: " + knownIssue.detectedIssues.size());
+						DefinedIssue knownIssue = findingsCategory.definedIssues.get(i);
+						String cvssVector = knownIssue.cvssVectorStr;
+						double cvssBaseScore = knownIssue.cvssBaseScore;
 
-					if (knownIssue.detectedIssues.size() > 0) {
+						log.debug("Detected num issues: " + knownIssue.detectedIssues.size());
+
+						if (knownIssue.detectedIssues.size() > 0) {
 
 
-						for (int j = 0; j < knownIssue.detectedIssues.size(); j++) {
-							String detectedIssue = knownIssue.detectedIssues.get(j);
+							for (int j = 0; j < knownIssue.detectedIssues.size(); j++) {
+								String detectedIssue = knownIssue.detectedIssues.get(j);
 
-							htmlBuffer.append("<tr>\n");
-							htmlBuffer.append("<td width=\"200px\" class=\"tableItemName\">" + detectedIssue + "</td>\n");
-							htmlBuffer.append("<td style=\"padding-left: 10px;\" width=\"200px\" class=\"tableItemName\">" + cvssVector + "</td>\n");
+								htmlBuffer.append("<tr>\n");
+								htmlBuffer.append("<td width=\"200px\" class=\"tableItemName\">" + detectedIssue + "</td>\n");
+								htmlBuffer.append("<td style=\"padding-left: 10px;\" width=\"200px\" class=\"tableItemName\">" + cvssVector + "</td>\n");
 
-							if (cvssBaseScore >= 0.0 && cvssBaseScore < 4.0) {
-								htmlBuffer.append("<td class=\"tableItemName\" "
-										+ "style=\"font-weight: bold; color: green;\">" 
-										+ cvssBaseScore + " (LOW) </td>\n");
-							} else if (cvssBaseScore >= 4.0 && cvssBaseScore < 7.0) {
-								htmlBuffer.append("<td class=\"tableItemName\" "
-										+ "style=\"font-weight: bold; color: orange;\">" 
-										+ cvssBaseScore + " (MEDIUM) </td>\n");
-							} else if (cvssBaseScore >= 7.0 && cvssBaseScore < 9.0) {
-								htmlBuffer.append("<td class=\"tableItemName\" "
-										+ "style=\"font-weight: bold; color: red;\">" 
-										+ cvssBaseScore + " (HIGH) </td>\n");
-							} else if (cvssBaseScore >= 9.0 && cvssBaseScore <= 10.0) {
-								htmlBuffer.append("<td class=\"tableItemName\" "
-										+ "style=\"font-weight: bold; color: purple;\">" 
-										+ cvssBaseScore + " (CRITICAL) </td>\n");
+								if (cvssBaseScore >= 0.0 && cvssBaseScore < 4.0) {
+									htmlBuffer.append("<td class=\"tableItemName\" "
+											+ "style=\"font-weight: bold; color: green;\">" 
+											+ cvssBaseScore + " (LOW) </td>\n");
+								} else if (cvssBaseScore >= 4.0 && cvssBaseScore < 7.0) {
+									htmlBuffer.append("<td class=\"tableItemName\" "
+											+ "style=\"font-weight: bold; color: orange;\">" 
+											+ cvssBaseScore + " (MEDIUM) </td>\n");
+								} else if (cvssBaseScore >= 7.0 && cvssBaseScore < 9.0) {
+									htmlBuffer.append("<td class=\"tableItemName\" "
+											+ "style=\"font-weight: bold; color: red;\">" 
+											+ cvssBaseScore + " (HIGH) </td>\n");
+								} else if (cvssBaseScore >= 9.0 && cvssBaseScore <= 10.0) {
+									htmlBuffer.append("<td class=\"tableItemName\" "
+											+ "style=\"font-weight: bold; color: purple;\">" 
+											+ cvssBaseScore + " (CRITICAL) </td>\n");
+								}
+
+								//htmlBuffer.append("<td width=\"50%\" class=\"tableItemDescription\">" + " Description " + "</td>\n");
+								htmlBuffer.append("</tr>\n");
 							}
-
-							//htmlBuffer.append("<td width=\"50%\" class=\"tableItemDescription\">" + " Description " + "</td>\n");
-							htmlBuffer.append("</tr>\n");
 						}
 					}
+					
+					htmlBuffer.append("</table>\n");
 				}
-				
-				htmlBuffer.append("</table>\n");
 			}
-		}
+		} else {
+			log.debug("Creating error message");
 
-		htmlBuffer.append("<table>\n");
+			// Error 
+			htmlBuffer.append("<div style=\"padding: 5px; margin-left:40px; \">The following error was detected:</div>\n");
+			htmlBuffer.append("<br><br>\n");
+			
+			htmlBuffer.append("<div style=\"padding: 5px; margin-left:40px; \">" + errorMessage + "</div>\n");
+			htmlBuffer.append("<br><br>\n");
+			
+			htmlBuffer.append("<div style=\"padding: 5px; margin-left:40px; \">The AppVet Team is aware of this issue and will "
+					+ "resubmit the app if and when this issue is resolved.</div>\n");
+
+		}
 
 		// END
 		htmlBuffer.append("<br><br><center>\n");
@@ -272,6 +297,7 @@ public class Report {
 		htmlBuffer.append("</center>\n");
 		htmlBuffer.append("</body>");
 		htmlBuffer.append("</html>");
+		log.debug("Returning HTML buffer");
 
 		return htmlBuffer.toString();
 	}

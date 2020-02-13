@@ -148,6 +148,17 @@ public class FileUtil {
 
 	public static boolean saveReport(String reportContent,
 			String reportFilePath) {
+		
+		if (reportContent == null) {
+			log.error("reportContent is null");
+			return false;
+		}
+		
+		if (reportFilePath == null) {
+			log.error("ReportFilePath is null");
+			return false;
+		}
+		
 		PrintWriter out;
 		try {
 			out = new PrintWriter(reportFilePath);
@@ -156,8 +167,8 @@ public class FileUtil {
 			out.close();
 			log.debug("Saved report " + reportFilePath);
 			return true;
-		} catch (FileNotFoundException e) {
-			log.error(e.toString());
+		} catch (Exception e) {
+			log.error("Error saving report: " + e.getMessage());
 			return false;
 		}
 	}
