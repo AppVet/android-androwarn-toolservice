@@ -706,6 +706,7 @@ public class Service extends HttpServlet {
 			e.printStackTrace();
 			log.error(e.getMessage());
 			return false;
+			
 		}
 	}
 
