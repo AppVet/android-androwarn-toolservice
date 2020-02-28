@@ -68,12 +68,8 @@ public class Service extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	private static final Logger log = Properties.log;
 	private static String appDirPath = null;
-	private String appFilePath = null;
 	private String jsonFileReportPath = null;
-	private String htmlFileReportPath = null;
-	private String pdfFileReportPath = null;
 	private String appIconFilePath = null;
-	private String fileName = null;
 	private String appId = null;
 	private static String python3Cmd = null;
 	private static String wkhtmltopdfCmd = null;
@@ -163,8 +159,6 @@ public class Service extends HttpServlet {
 						appMetadataHashMap.put("appstoreurl", new Value(incomingValue, Value.DataType.STRING, Value.InfoType.METADATA));
 					} 					
 				} else {
-					//String incomingParameter = item.getFieldName();
-					//log.debug("Received file " + incomingParameter);
 					// item is a file
 					if (item != null) {
 						log.debug("Received file: " + item.getName());
@@ -264,29 +258,16 @@ public class Service extends HttpServlet {
 		
 		String[] fullCmd = newCmd.split("\\s+");
 		ProcessBuilder pb = new ProcessBuilder(fullCmd);
-		
-//		ProcessBuilder pb = new ProcessBuilder(
-//				Properties.androwarnCmd,
-//				"-i",
-//				appFilePath,
-//				"-o",
-//				jsonFileReportPath,
-//				"-v",
-//				"3", 
-//				"-r",
-//				"json",
-//				"-d",
-//				"-w"
-//				);
 
 		// Run Androwarn and generate JSON report
-		String waitSeconds = "1800"; // 30 minutes
+		int waitMinutes = 60; // wait in minutes
 		StringBuffer result = new StringBuffer();
-		int exitValue = cmd.exec(pb, new Integer(waitSeconds).intValue(), result);
+		int exitValue = cmd.exec(pb, waitMinutes, result);
 
 		if (exitValue != 0) {
 			// All tool services require an AppVet app ID
-			sendErrorReport(result.toString(), htmlFileReportPath, pdfFileReportPath);
+			sendErrorReport(appId, appName, appVersion, 
+					appPackage, fileName, metadataHashMap, result.toString(), appIconFilePath, htmlFileReportPath, pdfFileReportPath);
 			return;
 		}
 		
@@ -298,11 +279,12 @@ public class Service extends HttpServlet {
 				jsonFileReportPath
 				);
 		result = new StringBuffer();
-		exitValue = cmd.exec(pb, new Integer(waitSeconds).intValue(), result);
+		exitValue = cmd.exec(pb, waitMinutes, result);
 
 		if (exitValue != 0) {
 			// All tool services require an AppVet app ID
-			sendErrorReport(result.toString(), htmlFileReportPath, pdfFileReportPath);
+			sendErrorReport(appId, appName, appVersion, 
+					appPackage, fileName, metadataHashMap, result.toString(), appIconFilePath, htmlFileReportPath, pdfFileReportPath);
 			return;
 		}
 		
@@ -328,6 +310,10 @@ public class Service extends HttpServlet {
 						findingsHashMap, 
 						appId, 
 						appIconFilePath,
+						null,
+						null,
+						null,
+						null,
 						null);
 		if (!FileUtil.saveReport(htmlReport, htmlFileReportPath)) {
 			HttpUtil.sendHttp500(response, "Androwarn could not save HTML report");
@@ -341,12 +327,13 @@ public class Service extends HttpServlet {
 				pdfFileReportPath
 				);
 		result = new StringBuffer();
-		exitValue = cmd.exec(pb, new Integer(waitSeconds).intValue(), result);
+		exitValue = cmd.exec(pb, new Integer(waitMinutes).intValue(), result);
 
 		if (exitValue != 0) {
 			// All tool services require an AppVet app ID
 			log.debug(result.toString());
-			sendErrorReport(result.toString(), htmlFileReportPath, pdfFileReportPath);
+			sendErrorReport(appId, appName, appVersion, 
+					appPackage, fileName, metadataHashMap, result.toString(), appIconFilePath, htmlFileReportPath, pdfFileReportPath);
 			return;
 		}
 		
@@ -375,7 +362,9 @@ public class Service extends HttpServlet {
 
 	}
 	
-	public void sendErrorReport(String errorMessage, String htmlFileReportPath, String pdfFileReportPath) {
+	public void sendErrorReport(String appId, String name, String version, String appPackage, 
+			String fileName, HashMap<String, ArrayList<AppMetadata>> metadataHashMap, 
+			String errorMessage, String appIconFilePath, String htmlFileReportPath, String pdfFileReportPath) {
 		
 		log.debug("Writing error message: " + errorMessage);
 		
@@ -385,6 +374,10 @@ public class Service extends HttpServlet {
 						null, 
 						appId, 
 						appIconFilePath,
+						name,
+						version,
+						appPackage,
+						fileName,
 						errorMessage);
 		
 		log.debug("Saving report");
@@ -402,16 +395,17 @@ public class Service extends HttpServlet {
 				htmlFileReportPath,
 				pdfFileReportPath
 				);
-		String waitSeconds = "1800"; // 30 minutes
+		int waitMinutes = 20; // 30 minutes
 		StringBuffer result = new StringBuffer();
-		int exitValue = cmd.exec(pb, new Integer(waitSeconds).intValue(), result);
+		int exitValue = cmd.exec(pb, waitMinutes, result);
 		
 		if (exitValue != 0) {
+			
 			// All tool services require an AppVet app ID
 			log.debug(result.toString());
 
-			log.error("Could not generate PDF");
-			return;
+			log.error("Issues generating PDF");
+			//return;
 		}
 		
 		log.debug("Sending report to AppVet");
@@ -517,14 +511,6 @@ public class Service extends HttpServlet {
 					getAnalysisInfo("apk_file", (JSONArray) value, metadataHashMap);
 					break;	
 
-//				case "androidmanifest.xml": 
-//					log.debug("Got androidmanifest.xml");
-//					break;	
-//
-//				case "apis_used": 
-//					log.debug("Got apis_used");
-//					break;	
-
 				default: 
 					log.error("Got unsupported key: " + key);
 					break;
@@ -618,11 +604,11 @@ public class Service extends HttpServlet {
 		
 		for (Map.Entry<String, FindingsCategory> categories : findingsHashMap.entrySet()) { 
 			
-			String catetory = (String) categories.getKey(); 
+			String catagory = (String) categories.getKey(); 
 			
-			FindingsCategory findingsCategory = findingsHashMap.get(catetory);
+			FindingsCategory findingsCategory = findingsHashMap.get(catagory);
 			
-			log.debug("Catagory matching: " + catetory);
+			log.debug("Catagory matching: " + catagory);
 			
 			for (int i = 0; i < findingsCategory.definedIssues.size(); i++) {
 				
@@ -638,15 +624,19 @@ public class Service extends HttpServlet {
 					int endIndex = json.indexOf("\"", startIndex);
 					if (startIndex > -1 && endIndex > -1 && endIndex <= json.length()) {
 						String match = json.substring(startIndex, endIndex);
-						log.error("ADDING ACTUAL: " + match);
-						definedIssue.detectedIssues.add(match);
-						foundCount++;
-						totalCvss += definedIssue.cvssBaseScore;
+						// Check if this already exists
+						boolean alreadyExists = checkExists(definedIssue.detectedIssues, match);
+						if (!alreadyExists) {
+							log.error("ADDING ACTUAL: " + match);
+							definedIssue.detectedIssues.add(match);
+							foundCount++;
+							totalCvss += definedIssue.cvssBaseScore;
+						} else {
+							log.warn("Match already exists in detectedIssues list");
+						}
 					}
 				} 
-				
 			}
-		
 		}
 		
 		log.debug("Total CVSS found: " + foundCount);
@@ -654,6 +644,16 @@ public class Service extends HttpServlet {
 		double avgCvss = (double) totalCvss / foundCount;
 		log.debug("Average: " + avgCvss);
 		return avgCvss;
+	}
+	
+	public static boolean checkExists(List<String> list, String value) {
+		for (int i = 0; i < list.size(); i++) {
+			String str = list.get(i);
+			if (str.equals(value)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/** This method should be used for sending files back to AppVet. */
@@ -703,64 +703,11 @@ public class Service extends HttpServlet {
 			httpPost = null;
 			return true;
 		} catch (Exception e) {
-			log.error(e.toString());
+			e.printStackTrace();
+			log.error(e.getMessage());
 			return false;
 		}
 	}
-
-	/** Note that no error stream is captured. */
-//	public static int runCommand(ProcessBuilder pb, int minutes, StringBuffer buf) {
-//		log.debug("Executing: " + pb.command());
-//
-//		Process p = null;
-//		int exitCode = 1;
-//		
-//		try {
-//			// IF INCOMING DATA IS JSON, DO NOT REDIRECT ERROR STREAM. OTHERWISE, 
-//			// JSON WILL BE MIXED WITH ERROR MESSAGES!
-//			pb.redirectErrorStream(true);
-//			p = pb.start();
-//
-//			InputStream is = p.getInputStream();
-//			InputStream err = p.getErrorStream();
-//
-//			InputStreamReader isr = new InputStreamReader(is);
-//			InputStreamReader esr = new InputStreamReader(err);
-//
-//			// blocked
-//			BufferedReader reader = new BufferedReader(isr);
-//
-//			String line = null;
-//			while ((line = reader.readLine()) != null) {
-//				//log.debug(line);
-//			}
-//
-//			try {
-//				p.waitFor(minutes, TimeUnit.MINUTES);
-//				exitCode = p.exitValue();
-//				log.debug("Got exit code: " + exitCode + " executing: " + pb.command());
-//				if (exitCode == 0) {
-//					buf.append()
-//				}
-//
-//			} catch (InterruptedException e) {
-//				// Timed-out waiting for process to complete
-//				Thread.currentThread().interrupt();
-//				log.error("Process timed-out executing: " + pb.command());
-//			}
-//			   
-//			reader.close();
-//			isr.close();
-//			is.close();
-//
-//			return exitCode;
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//		} finally {
-//			p.destroy();
-//		}
-//		return 1;
-//	}
 
 	public static String readJsonFile(String jsonFilePath) {
 		log.debug("Reading: " + jsonFilePath);

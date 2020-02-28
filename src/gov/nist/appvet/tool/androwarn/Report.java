@@ -17,7 +17,8 @@ public class Report {
 
 	public static String createHtml(double avgCvss, HashMap<String, ArrayList<AppMetadata>> metadataHashMap,
 			HashMap<String, FindingsCategory> findingsHashMap, 
-			String appId, String appFileIconPath, String errorMessage) {
+			String appId, String appFileIconPath, String name, String version, 
+			String appPackage, String fileName, String errorMessage) {
 		
 		log.debug("Creating HTML file");
 
@@ -112,14 +113,29 @@ public class Report {
 
 		htmlBuffer.append("<tr>");
 		htmlBuffer.append("<td rowspan = \"2\"> <img src=\"" + appFileIconPath + "\" height=\"80px\" /> </td>");
-		htmlBuffer.append("<td style=\"font-family:arial;font-size:36px;padding-left:20px;\">" 
-				+ getAllValues("application_name", metadataHashMap) + "</td>");
+		
+		if (errorMessage != null) {
+			htmlBuffer.append("<td style=\"font-family:arial;font-size:36px;padding-left:20px;\">" 
+					+ name + "</td>");
+		} else {
+			htmlBuffer.append("<td style=\"font-family:arial;font-size:36px;padding-left:20px;\">" 
+					+ getAllValues("application_name", metadataHashMap) + "</td>");	
+		}
+
 		htmlBuffer.append("</tr>");
 
 		htmlBuffer.append("<tr>");
-		htmlBuffer.append("<td style=\"font-family:arial; "
-				+ "font-size:24px;padding-left:20px;margin:0px;\">Version " 
-				+ getAllValues("application_version", metadataHashMap) + "</td>");
+		
+		if (errorMessage != null) {
+			htmlBuffer.append("<td style=\"font-family:arial; "
+					+ "font-size:24px;padding-left:20px;margin:0px;\">Version " 
+					+ version + "</td>");
+		} else {
+			htmlBuffer.append("<td style=\"font-family:arial; "
+					+ "font-size:24px;padding-left:20px;margin:0px;\">Version " 
+					+ getAllValues("application_version", metadataHashMap) + "</td>");
+		}
+
 		htmlBuffer.append("</tr>");
 
 		htmlBuffer.append("</table>");
@@ -133,7 +149,7 @@ public class Report {
 		String strDouble = String.format("%.2f", avgCvss);
 
 		if (avgCvss == -1) {
-			htmlBuffer.append("<td class=\"itemValue\" style=\"font-size: 22px; font-weight: bold; color: green;\">ERROR</td>\n");
+			htmlBuffer.append("<td class=\"itemValue\" style=\"font-size: 22px; font-weight: bold; color: black;\">ERROR</td>\n");
 		} else if (avgCvss >= 0 && avgCvss < 4.0) {
 			htmlBuffer.append("<td class=\"itemValue\" style=\"font-size: 22px; font-weight: bold; color: green;\">" + strDouble + " (LOW) </td>\n");
 		} else if (avgCvss >= 4.0 && avgCvss < 7.0) {
@@ -174,19 +190,29 @@ public class Report {
 
 		htmlBuffer.append("<tr>\n");
 		htmlBuffer.append("<td class=\"itemName\">Package: </td>\n");
-		htmlBuffer.append("<td class=\"itemValue\">" + getAllValues("package_name", metadataHashMap) + "</td>\n");
+		if (errorMessage != null) {
+			htmlBuffer.append("<td class=\"itemValue\">" + appPackage + "</td>\n");
+		} else {
+			htmlBuffer.append("<td class=\"itemValue\">" + getAllValues("package_name", metadataHashMap) + "</td>\n");
+		}
 		htmlBuffer.append("</tr>\n");
 
 		htmlBuffer.append("<tr>\n");
 		htmlBuffer.append("<td class=\"itemName\">File: </td>\n");
-		htmlBuffer.append("<td class=\"itemValue\">" + getAllValues("file_name", metadataHashMap) + "</td>\n");
+		if (errorMessage != null) {
+			htmlBuffer.append("<td class=\"itemValue\">" + fileName + "</td>\n");
+		} else {
+			htmlBuffer.append("<td class=\"itemValue\">" + getAllValues("file_name", metadataHashMap) + "</td>\n");
+		}
 		htmlBuffer.append("</tr>\n");
 
-		htmlBuffer.append("<tr>\n");
-		htmlBuffer.append("<td class=\"itemName\">Fingerprint: </td>\n");
-		htmlBuffer.append("<td class=\"itemValue\">" + getAllValues("fingerprint", metadataHashMap) + "</td>\n");
-		htmlBuffer.append("</tr>\n");
-
+		if (errorMessage == null) {
+			htmlBuffer.append("<tr>\n");
+			htmlBuffer.append("<td class=\"itemName\">Fingerprint: </td>\n");
+			htmlBuffer.append("<td class=\"itemValue\">" + getAllValues("fingerprint", metadataHashMap) + "</td>\n");
+			htmlBuffer.append("</tr>\n");
+		}
+		
 		if (errorMessage == null) {
 			htmlBuffer.append("<tr>\n");
 			htmlBuffer.append("<td class=\"itemName\">Certificate: </td>\n");
@@ -194,7 +220,6 @@ public class Report {
 			htmlBuffer.append("</tr>\n");
 		}
 
-		htmlBuffer.append("</tr>\n");
 		htmlBuffer.append("</table>\n");
 
 		//----------------------------------- Findings ----------------------------------------
@@ -280,10 +305,10 @@ public class Report {
 			log.debug("Creating error message");
 
 			// Error 
-			htmlBuffer.append("<div style=\"padding: 5px; margin-left:40px; \">The following error was detected:</div>\n");
+			htmlBuffer.append("<div style=\"padding: 5px; margin-left:40px; \">Androwarn encountered an error:</div>\n");
 			htmlBuffer.append("<br><br>\n");
 			
-			htmlBuffer.append("<div style=\"padding: 5px; margin-left:40px; \">" + errorMessage + "</div>\n");
+			htmlBuffer.append("<div style=\"padding: 5px; margin-left:40px; \"><code>" + errorMessage + "</code></div>\n");
 			htmlBuffer.append("<br><br>\n");
 			
 			htmlBuffer.append("<div style=\"padding: 5px; margin-left:40px; \">The AppVet Team is aware of this issue and will "

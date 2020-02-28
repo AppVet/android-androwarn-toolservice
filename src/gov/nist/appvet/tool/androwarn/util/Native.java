@@ -39,7 +39,7 @@ public class Native {
 			errorHandler.start();
 			
 			// Wait for process to complete
-			proc.waitFor(waitSeconds, TimeUnit.SECONDS);
+			proc.waitFor(waitSeconds, TimeUnit.MINUTES);
 			
 			// Return result
 			int exitCode = proc.exitValue();
