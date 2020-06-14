@@ -130,6 +130,13 @@ public class FileUtil {
 				return false;
 			}
 			File file = new File(filePath);
+			if (file.exists()) {
+				log.warn("File " + filePath + " exists. Deleting...");
+				boolean fileDeleted = file.delete();
+				if (!fileDeleted) {
+					log.error("File " + filePath + " could not be deleted.");
+				}
+			}
 			fileItem.write(file);
 			log.debug("Saved " + filePath);
 			return true;

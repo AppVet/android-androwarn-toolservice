@@ -97,8 +97,8 @@ public class Report {
 		htmlBuffer.append("<img src=\"" + androwarnLogo + "\" alt=\"Androwarn logo\" title=\"Androwarn logo\" style=\"height: 60px;\">");
 		htmlBuffer.append("<br>");			
 
-		htmlBuffer.append("<div style=\"margin-top: 10px; font-family:arial; font-size: 30px; font-weight: 100; color: #595959;\">Androwarn Report</div>");
-		htmlBuffer.append("<div style=\"text-decoration: none; font-family:arial; font-size: 16px; font-weight: 50; color: #a6a6a6;\">https://github.com/maaaaz/androwarn</div>");
+		htmlBuffer.append("<div style=\"margin-top: 10px; font-family:arial; font-size: 30px; font-weight: 100; \">Androwarn Report</div>");
+		htmlBuffer.append("<div style=\"text-decoration: none; font-family:arial; font-size: 16px; font-weight: 50; \">https://github.com/maaaaz/androwarn</div>");
 
 		
 		htmlBuffer.append("</center>");
@@ -118,8 +118,10 @@ public class Report {
 			htmlBuffer.append("<td style=\"font-family:arial;font-size:36px;padding-left:20px;\">" 
 					+ name + "</td>");
 		} else {
+			String appName = getAllValues("application_name", metadataHashMap).replace("\"", "");
+
 			htmlBuffer.append("<td style=\"font-family:arial;font-size:36px;padding-left:20px;\">" 
-					+ getAllValues("application_name", metadataHashMap) + "</td>");	
+					+ appName + "</td>");	
 		}
 
 		htmlBuffer.append("</tr>");
@@ -246,13 +248,13 @@ public class Report {
 						System.out.println("Printing category header: " + issueCategory);
 						System.out.println("Num defined issues: " + findingsCategory.definedIssues.size());
 
-						htmlBuffer.append("<h3 style=\"padding: 5px; margin-left:40px; color: white; background-color: #0099ff;\">" 
+						htmlBuffer.append("<h3 style=\"font-family: arial; font-size: 16px; font-weight: bold; padding: 5px; padding-top: 8px; margin-left:40px; color: white; background-color: #0099ff;\">"
 								+ AnalysisCategory.getEnum(issueCategory).formalName + "</h3>\n");
 						htmlBuffer.append("<table class=\"tableMain\" width=\"100%\">\n");
 						htmlBuffer.append("<tr>\n");
-						htmlBuffer.append("<th width=\"40%\" >Issue</th>\n");
-						htmlBuffer.append("<th style=\"padding-left: 10px;\" width=\"35%\" >CVSS Vector</th>\n");
-						htmlBuffer.append("<th width=\"15%\" >Score</th>\n");
+						htmlBuffer.append("<th width=\"40%\" >ISSUE</th>\n");
+						htmlBuffer.append("<th style=\"padding-left: 10px;\" width=\"35%\" >CVSS</th>\n");
+						htmlBuffer.append("<th width=\"15%\" >SCORE</th>\n");
 						htmlBuffer.append("</tr>\n");
 					}
 					
