@@ -15,7 +15,8 @@ public class Report {
 	private Report() {}
 
 
-	public static String createHtml(double avgCvss, HashMap<String, ArrayList<AppMetadata>> metadataHashMap,
+	public static String createHtml(double avgCvss, 
+			HashMap<String, ArrayList<AppMetadata>> metadataHashMap,
 			HashMap<String, FindingsCategory> findingsHashMap, 
 			String appId, String appFileIconPath, String name, String version, 
 			String appPackage, String fileName, String errorMessage) {
@@ -115,13 +116,20 @@ public class Report {
 		htmlBuffer.append("<td rowspan = \"2\"> <img src=\"" + appFileIconPath + "\" height=\"80px\" /> </td>");
 		
 		if (errorMessage != null) {
+			log.debug("Found app name: " + name);
+			String appName = name.replace("%20", " ");
+			log.debug("Final app name: " + appName);
 			htmlBuffer.append("<td style=\"font-family:arial;font-size:36px;padding-left:20px;\">" 
-					+ name + "</td>");
+					+ appName + "</td>");
 		} else {
-			String appName = getAllValues("application_name", metadataHashMap).replace("\"", "");
-
+			//String appName = getAllValues("application_name", metadataHashMap);
+			
+			String appName = name;
+			log.debug("Found app name: " + appName);
+			String appName2 = appName.replace("%20", " ");
+			log.debug("Final name: " + appName);
 			htmlBuffer.append("<td style=\"font-family:arial;font-size:36px;padding-left:20px;\">" 
-					+ appName + "</td>");	
+					+ appName2 + "</td>");	
 		}
 
 		htmlBuffer.append("</tr>");
@@ -264,7 +272,7 @@ public class Report {
 						String cvssVector = knownIssue.cvssVectorStr;
 						double cvssBaseScore = knownIssue.cvssBaseScore;
 
-						log.debug("Detected num issues: " + knownIssue.detectedIssues.size());
+						//log.debug("Detected num issues: " + knownIssue.detectedIssues.size());
 
 						if (knownIssue.detectedIssues.size() > 0) {
 

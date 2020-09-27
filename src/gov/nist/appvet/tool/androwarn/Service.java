@@ -140,6 +140,7 @@ public class Service extends HttpServlet {
 						appId = incomingValue;
 						appMetadataHashMap.put("appid", new Value(incomingValue, Value.DataType.STRING, Value.InfoType.METADATA));
 					} else if (incomingParameter.equals("appname")) {
+						// Note incoming value from AppVet will have '%20' for spaces!
 						appName = incomingValue;
 						appMetadataHashMap.put("application_name", new Value(incomingValue, Value.DataType.STRING, Value.InfoType.METADATA));
 					} else if (incomingParameter.equals("appos")) {
@@ -166,10 +167,10 @@ public class Service extends HttpServlet {
 						if (item.getName().endsWith(".apk") || item.getName().endsWith(".ipa")) {
 							appFileItem = item;
 							appMetadataHashMap.put("file_name", new Value(appFileItem.getName(), Value.DataType.STRING, Value.InfoType.METADATA));
-							log.debug("Received app file: " + appFileItem.getName());
+							//log.debug("Received app file: " + appFileItem.getName());
 						} else if (item.getName().endsWith(".png")) {
 							iconFileItem = item;
-							log.debug("Received icon file: " + iconFileItem.getName());
+							//log.debug("Received icon file: " + iconFileItem.getName());
 						} else {
 							log.warn("Ignoring received file " + item.getName());
 						}
@@ -200,7 +201,7 @@ public class Service extends HttpServlet {
 			fileName = FileUtil.getFileName(appFileItem.getName());
 			
 			appFilePath = appDirPath + "/" + fileName;
-			log.debug("APP FILE PATH: " + appFilePath);
+			//log.debug("APP FILE PATH: " + appFilePath);
 			
 			// Must be an APK file
 			if (!fileName.endsWith(".apk")) {
@@ -218,7 +219,7 @@ public class Service extends HttpServlet {
 		if (iconFileItem != null) {
 			
 			appIconFilePath = appDirPath + "/icon.png";
-			log.debug("APP ICON PATH: " + appIconFilePath);
+			//log.debug("APP ICON PATH: " + appIconFilePath);
 			
 			if (!FileUtil.saveFileUpload(iconFileItem, appIconFilePath)) {
 				HttpUtil.sendHttp500(response, "Could not save icon");
@@ -228,24 +229,24 @@ public class Service extends HttpServlet {
 		}
 		
 		jsonFileReportPath = appDirPath + "/report.json";
-		log.debug("JSON REPORT PATH: " + jsonFileReportPath);
+		//log.debug("JSON REPORT PATH: " + jsonFileReportPath);
 		
 		htmlFileReportPath = appDirPath + "/report.html";
-		log.debug("HTML REPORT PATH: " + htmlFileReportPath);
+		//log.debug("HTML REPORT PATH: " + htmlFileReportPath);
 
 		pdfFileReportPath = appDirPath + "/report.pdf";
-		log.debug("PDF REPORT PATH: " + pdfFileReportPath);
+		//log.debug("PDF REPORT PATH: " + pdfFileReportPath);
 
 		// Send acknowledgement back to AppVet
 		HttpUtil.sendHttp202(response, "Received app " + appId
 				+ " for processing.");
 		
 		// Load known vulnerabilities
-		log.debug("Loading CVSS data");
+		//log.debug("Loading CVSS data");
 		loadCvssData();
 
 		// Start processing app
-		log.debug("Executing Androwarn on app");
+		//log.debug("Executing Androwarn on app");
 
 		// Androwarn command without args (i.e., sudo python3 androwarn.py)
 		String newCmd = Properties.androwarnCmd 
@@ -275,7 +276,7 @@ public class Service extends HttpServlet {
 		pb = new ProcessBuilder(
 				"/usr/bin/sudo",
 				"/usr/bin/chown",
-				"appvet:appvet",
+				"root:root",
 				jsonFileReportPath
 				);
 		result = new StringBuffer();
@@ -310,7 +311,7 @@ public class Service extends HttpServlet {
 						findingsHashMap, 
 						appId, 
 						appIconFilePath,
-						null,
+						appName,
 						null,
 						null,
 						null,
@@ -331,7 +332,7 @@ public class Service extends HttpServlet {
 
 		if (exitValue != 0) {
 			// All tool services require an AppVet app ID
-			log.debug(result.toString());
+			//log.debug(result.toString());
 			sendErrorReport(appId, appName, appVersion, 
 					appPackage, fileName, metadataHashMap, result.toString(), appIconFilePath, htmlFileReportPath, pdfFileReportPath);
 			return;
@@ -341,15 +342,15 @@ public class Service extends HttpServlet {
 		sendInNewHttpRequest(appId, pdfFileReportPath, avgCvss);
 		
 		// Clear structures
-		log.debug("Clearing hashmaps");
+		//log.debug("Clearing hashmaps");
 		metadataHashMap.clear();
 		findingsHashMap.clear();
 		
 		// Clean up
 		if (!Properties.keepApps) {
-			log.debug("Removing tmp files");
+			//log.debug("Removing tmp files");
 			try {
-				log.debug("Removing app " + appId + " files.");
+				//log.debug("Removing app " + appId + " files.");
 				FileUtils.deleteDirectory(new File(appDirPath));
 			} catch (IOException ioe) {
 				log.error(ioe.getMessage());
@@ -366,7 +367,7 @@ public class Service extends HttpServlet {
 			String fileName, HashMap<String, ArrayList<AppMetadata>> metadataHashMap, 
 			String errorMessage, String appIconFilePath, String htmlFileReportPath, String pdfFileReportPath) {
 		
-		log.debug("Writing error message: " + errorMessage);
+		//log.debug("Writing error message: " + errorMessage);
 		
 		String htmlReport = 
 				Report.createHtml(-1.0, 
@@ -380,14 +381,14 @@ public class Service extends HttpServlet {
 						fileName,
 						errorMessage);
 		
-		log.debug("Saving report");
+		//log.debug("Saving report");
 
 		if (!FileUtil.saveReport(htmlReport, htmlFileReportPath)) {
 			log.error("Could not generate HTML report.");
 			return;
 		}
 		
-		log.debug("Generating PDF");
+		//log.debug("Generating PDF");
 
 		// Generate PDF file from HTML report
 		ProcessBuilder pb = new ProcessBuilder(
@@ -402,7 +403,7 @@ public class Service extends HttpServlet {
 		if (exitValue != 0) {
 			
 			// All tool services require an AppVet app ID
-			log.debug(result.toString());
+			//log.debug(result.toString());
 
 			log.error("Issues generating PDF");
 			//return;
@@ -431,16 +432,16 @@ public class Service extends HttpServlet {
 				//System.out.println("line: " + str); 
 				if (str != null && !str.startsWith("#") && !str.trim().isEmpty()) {
 					String[] issueData = str.split(";");
-					log.debug("\nCATEGORY: " + issueData[0]);
+					//log.debug("\nCATEGORY: " + issueData[0]);
 					if (issueData[0] == null)
 						log.error("Read null category from cvss file");
-					log.debug("\nISSUE: " + issueData[1]);
+					//log.debug("\nISSUE: " + issueData[1]);
 					if (issueData[1] == null)
 						log.error("Read null issue from cvss file");
-					log.debug("\nVECTOR: " + issueData[2]);
+					//log.debug("\nVECTOR: " + issueData[2]);
 					if (issueData[2] == null)
 						log.error("Read null vector from cvss file");
-					log.debug("\nCVSS: " + issueData[3]);
+					//log.debug("\nCVSS: " + issueData[3]);
 					if (issueData[0] == null)
 						log.error("Read null base score from cvss file");
 					
@@ -459,7 +460,7 @@ public class Service extends HttpServlet {
 						findingsHashMap.put(issueData[0].trim(), findingsCategory);
 						
 					} else {
-						log.debug("Updating category: " + issueData[0].trim());
+						//log.debug("Updating category: " + issueData[0].trim());
 						DefinedIssue issue = new DefinedIssue(issueData[1], 
 								issueData[2], 
 								new Double(issueData[3]));
@@ -478,13 +479,13 @@ public class Service extends HttpServlet {
 	// Get app metadata - does not get 'analysis_results' here
 	public void getMetadata(String json) {
 
-		log.debug("Getting metadata");
+		//log.debug("Getting metadata");
 		//		Integer arrayLength = JsonPath.read(json, "$.length()");
 		//		log.debug("JSON array length: " + arrayLength);
 
 		// Get Findings
 		JSONArray jsonArray = JsonPath.read(json, "$");
-		log.debug("jsonArray.size(): " + jsonArray.size());
+		//log.debug("jsonArray.size(): " + jsonArray.size());
 
 		for (int i = 0; i < jsonArray.size(); i++) {
 
@@ -496,18 +497,18 @@ public class Service extends HttpServlet {
 				String key = entry.getKey();
 				Object value = entry.getValue();
 
-				log.debug("MAIN KEY: " + key); 
+				//log.debug("MAIN KEY: " + key); 
 
 				switch (key) {
 				case "application_information": 
-					log.debug("Got application_information");
-					log.debug("entry here");
+					//log.debug("Got application_information");
+					//log.debug("entry here");
 
 					getAnalysisInfo("application_information", (JSONArray) value, metadataHashMap);
 					break;
 
 				case "apk_file": 
-					log.debug("Got apk_file");
+					//log.debug("Got apk_file");
 					getAnalysisInfo("apk_file", (JSONArray) value, metadataHashMap);
 					break;	
 
@@ -550,7 +551,7 @@ public class Service extends HttpServlet {
 
 			// App Information
 			case "application_name": 
-				log.debug("Got application_name");
+				//log.debug("Got application_name");
 				metadataHashMap.put("application_name", arrayList);
 				break;
 
@@ -572,17 +573,17 @@ public class Service extends HttpServlet {
 
 			// APK File
 			case "file_name": 
-				log.debug("Got file_name");
+				//log.debug("Got file_name");
 				metadataHashMap.put("file_name", arrayList);
 				break;
 
 			case "fingerprint": 
-				log.debug("Got fingerprint");
+				//log.debug("Got fingerprint");
 				metadataHashMap.put("fingerprint", arrayList);
 				break;
 
 			case "certificate_information": 
-				log.debug("Got certificate_information");
+				//log.debug("Got certificate_information");
 				metadataHashMap.put("certificate_information", arrayList);
 				break;
 
@@ -596,7 +597,7 @@ public class Service extends HttpServlet {
 
 	public static double analyzeResults(String json, HashMap <String, FindingsCategory> findingsHashMap) {
 		
-		log.debug("Analyzing results");
+		//log.debug("Analyzing results");
 		int foundCount = 0;
 		double totalCvss = 0.0;
 		
@@ -608,31 +609,31 @@ public class Service extends HttpServlet {
 			
 			FindingsCategory findingsCategory = findingsHashMap.get(catagory);
 			
-			log.debug("Catagory matching: " + catagory);
+			//log.debug("Catagory matching: " + catagory);
 			
 			for (int i = 0; i < findingsCategory.definedIssues.size(); i++) {
 				
 				DefinedIssue definedIssue = findingsCategory.definedIssues.get(i);
-				log.debug("Looking for match: " + definedIssue.issueName + "|");
+				//log.debug("Looking for match: " + definedIssue.issueName + "|");
 				
 				// MUST USE TRIM
 				int startIndex = json.indexOf(definedIssue.issueName.trim());
-				log.debug("startIndex: " + startIndex);
+				//log.debug("startIndex: " + startIndex);
 				
 				if (startIndex > -1) {
-					log.error("Match!");
+					//log.debug("Match!");
 					int endIndex = json.indexOf("\"", startIndex);
 					if (startIndex > -1 && endIndex > -1 && endIndex <= json.length()) {
 						String match = json.substring(startIndex, endIndex);
 						// Check if this already exists
 						boolean alreadyExists = checkExists(definedIssue.detectedIssues, match);
 						if (!alreadyExists) {
-							log.error("ADDING ACTUAL: " + match);
+							//log.error("ADDING ACTUAL: " + match);
 							definedIssue.detectedIssues.add(match);
 							foundCount++;
 							totalCvss += definedIssue.cvssBaseScore;
 						} else {
-							log.warn("Match already exists in detectedIssues list");
+							//log.warn("Match already exists in detectedIssues list");
 						}
 					}
 				} 
@@ -661,7 +662,7 @@ public class Service extends HttpServlet {
 			String reportFilePath,
 			double toolScore) {
 		
-		log.debug("Sending report to AppVet");
+		//log.debug("Sending report to AppVet");
 		HttpParams httpParameters = new BasicHttpParams();
 		HttpConnectionParams.setConnectionTimeout(httpParameters, 30000);
 		HttpConnectionParams.setSoTimeout(httpParameters, 1200000);
@@ -711,23 +712,23 @@ public class Service extends HttpServlet {
 	}
 
 	public static String readJsonFile(String jsonFilePath) {
-		log.debug("Reading: " + jsonFilePath);
+		//log.debug("Reading: " + jsonFilePath);
 
 		try {
-			log.debug("Getting FileReader");
+			//log.debug("Getting FileReader");
 
 			FileReader fr = new FileReader(jsonFilePath);
-			log.debug("Getting BufferedReader");
+			//log.debug("Getting BufferedReader");
 
 			BufferedReader reader = new BufferedReader(fr);
 
 			String line = null;
-			log.debug("Setting StringBuffer");
+			//log.debug("Setting StringBuffer");
 			StringBuffer buf = new StringBuffer();
-			log.debug("Reading json line");
+			//log.debug("Reading json line");
 			while ((line = reader.readLine()) != null) {
 				buf.append(line);
-				log.debug(line);
+				//log.debug(line);
 			}
 
 			reader.close();
