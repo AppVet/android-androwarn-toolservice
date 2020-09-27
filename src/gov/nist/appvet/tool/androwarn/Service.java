@@ -279,6 +279,7 @@ public class Service extends HttpServlet {
 				"root:root",
 				jsonFileReportPath
 				);
+		
 		result = new StringBuffer();
 		exitValue = cmd.exec(pb, waitMinutes, result);
 
