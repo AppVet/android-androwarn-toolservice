@@ -396,6 +396,7 @@ public class Service extends HttpServlet {
 
 		// Generate PDF file from HTML report
 		ProcessBuilder pb = new ProcessBuilder(
+				"sudo ", 
 				wkhtmltopdfCmd,
 				htmlFileReportPath,
 				pdfFileReportPath
