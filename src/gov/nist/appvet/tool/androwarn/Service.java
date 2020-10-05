@@ -69,9 +69,9 @@ public class Service extends HttpServlet {
 	private static final Logger log = Properties.log;
 	private static String appDirPath = null;
 	private String jsonFileReportPath = null;
-	private String appIconFilePath = null;
-	private String appId = null;
-	private static String python3Cmd = null;
+//	private String appIconFilePath = null;
+//	private String appId = null;
+//	private static String python3Cmd = null;
 	private static String wkhtmltopdfCmd = null;
 	
 	public static HashMap<String, ArrayList<AppMetadata>> metadataHashMap = new HashMap<String, ArrayList<AppMetadata>>();
@@ -83,11 +83,11 @@ public class Service extends HttpServlet {
 		super();
 		String toolOS = System.getProperty("os.name");
 		if (toolOS.toUpperCase().indexOf("WIN") > -1) {
-			python3Cmd = "python3";
+			//python3Cmd = "python3";
 			wkhtmltopdfCmd = "wkhtmltopdf";
 
 		} else if (toolOS.toUpperCase().indexOf("NUX") > -1) {
-			python3Cmd = "python3";
+			//python3Cmd = "python3";
 			wkhtmltopdfCmd = Properties.htmlToPdfCommand;
 		}
 		
