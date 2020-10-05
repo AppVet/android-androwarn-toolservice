@@ -265,6 +265,8 @@ public class Service extends HttpServlet {
 		StringBuffer result = new StringBuffer();
 		int exitValue = cmd.exec(pb, waitMinutes, result);
 
+		log.debug("RESULT: " + result);
+		
 		if (exitValue != 0) {
 			// All tool services require an AppVet app ID
 			sendErrorReport(appId, appName, appVersion, 
