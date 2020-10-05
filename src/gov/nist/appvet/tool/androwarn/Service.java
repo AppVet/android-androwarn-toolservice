@@ -660,6 +660,90 @@ public class Service extends HttpServlet {
 		}
 		return false;
 	}
+	
+	/** This method should be used for sending files back to AppVet. */
+	public static boolean sendReport(String appId,
+			String reportFilePath,
+			double toolScore) {
+	
+		// Androwarn command without args (i.e., sudo python3 androwarn.py)
+		String newCmd = 
+				" curl --verbose -F command=SUBMIT_REPORT -F  appid=\"" 
+						+ appId + "\" -F toolid=\"" + Properties.toolId + "\" -F toolscore=\"" 
+						+ toolScore + "\" -F file@/\"" + reportFilePath + "\" "
+								+ " http://127.0.0.1:8080/appvet/AppVetServlet";
+		
+		String[] fullCmd = newCmd.split("\\s+");
+		ProcessBuilder pb = new ProcessBuilder(fullCmd);
+
+		// Run Androwarn and generate JSON report
+		int waitMinutes = 60; // wait in minutes
+		StringBuffer result = new StringBuffer();
+		Native cmd = null;
+
+		int exitValue = cmd.exec(pb, waitMinutes, result);
+
+		//log.debug("RESULT: " + result);
+		
+		if (exitValue != 0) {
+			// All tool services require an AppVet app ID
+			log.error("Got non-zero value: " + result.toString());
+			return false;
+		} else {
+			log.error("Success: " + result.toString());
+			return true;
+		}
+		
+		
+		
+/*		//log.debug("Sending report to AppVet");
+		HttpParams httpParameters = new BasicHttpParams();
+		HttpConnectionParams.setConnectionTimeout(httpParameters, 30000);
+		HttpConnectionParams.setSoTimeout(httpParameters, 1200000);
+		HttpClient httpClient = new DefaultHttpClient(httpParameters);
+		httpClient = SSLWrapper.wrapClient(httpClient);
+
+		try {
+			
+			 * To send reports back to AppVet, the following parameters must be
+			 * sent: - command: SUBMIT_REPORT - username: AppVet username -
+			 * password: AppVet password - appid: The app ID - toolid: The ID of
+			 * this tool - toolrisk: The risk assessment
+			 * (LOW, MODERATE, HIGH, ERROR) - report: The report file.
+			 
+			MultipartEntity entity = new MultipartEntity();
+			entity.addPart("command",
+					new StringBody("SUBMIT_REPORT", Charset.forName("UTF-8")));
+			entity.addPart("appid",
+					new StringBody(appId, Charset.forName("UTF-8")));
+			entity.addPart("toolid",
+					new StringBody(Properties.toolId, Charset.forName("UTF-8")));
+			entity.addPart("toolscore", new StringBody(toolScore + "",
+					Charset.forName("UTF-8")));
+//			entity.addPart("toolrisk", new StringBody(reportStatus.name(),
+//					Charset.forName("UTF-8")));
+			File report = new File(reportFilePath);
+			FileBody fileBody = new FileBody(report);
+			entity.addPart("file", fileBody);
+			HttpPost httpPost = new HttpPost(Properties.appvetUrl);
+			String credentials = Base64.getEncoder().encodeToString((Properties.appvetUsername + ":" + Properties.appvetPassword).getBytes());
+			httpPost.setHeader("Authorization", "Basic " + credentials);
+
+			httpPost.setEntity(entity);
+			// Send the report to AppVet
+			log.debug("Sending report file to AppVet");
+			final HttpResponse response = httpClient.execute(httpPost);
+			log.debug("Received from AppVet: " + response.getStatusLine());
+			// Clean up
+			httpPost = null;
+			return true;
+		} catch (Exception e) {
+			e.printStackTrace();
+			log.error(e.getMessage());
+			return false;
+			
+		}*/
+	}
 
 	/** This method should be used for sending files back to AppVet. */
 	public static boolean sendInNewHttpRequest(String appId,
