@@ -343,7 +343,7 @@ public class Service extends HttpServlet {
 		}
 		
 		// Send to AppVet
-		sendInNewHttpRequest(appId, pdfFileReportPath, avgCvss);
+		sendReport(appId, pdfFileReportPath, avgCvss);
 		
 		// Clear structures
 		//log.debug("Clearing hashmaps");
@@ -416,7 +416,7 @@ public class Service extends HttpServlet {
 		log.debug("Sending report to AppVet");
 
 		// Send to AppVet
-		sendInNewHttpRequest(appId, pdfFileReportPath, -1.0);
+		sendReport(appId, pdfFileReportPath, -1.0);
 	}
 	
 	private static void loadCvssData() {
@@ -693,56 +693,7 @@ public class Service extends HttpServlet {
 			log.error("Success: " + result.toString());
 			return true;
 		}
-		
-		
-		
-/*		//log.debug("Sending report to AppVet");
-		HttpParams httpParameters = new BasicHttpParams();
-		HttpConnectionParams.setConnectionTimeout(httpParameters, 30000);
-		HttpConnectionParams.setSoTimeout(httpParameters, 1200000);
-		HttpClient httpClient = new DefaultHttpClient(httpParameters);
-		httpClient = SSLWrapper.wrapClient(httpClient);
-
-		try {
-			
-			 * To send reports back to AppVet, the following parameters must be
-			 * sent: - command: SUBMIT_REPORT - username: AppVet username -
-			 * password: AppVet password - appid: The app ID - toolid: The ID of
-			 * this tool - toolrisk: The risk assessment
-			 * (LOW, MODERATE, HIGH, ERROR) - report: The report file.
-			 
-			MultipartEntity entity = new MultipartEntity();
-			entity.addPart("command",
-					new StringBody("SUBMIT_REPORT", Charset.forName("UTF-8")));
-			entity.addPart("appid",
-					new StringBody(appId, Charset.forName("UTF-8")));
-			entity.addPart("toolid",
-					new StringBody(Properties.toolId, Charset.forName("UTF-8")));
-			entity.addPart("toolscore", new StringBody(toolScore + "",
-					Charset.forName("UTF-8")));
-//			entity.addPart("toolrisk", new StringBody(reportStatus.name(),
-//					Charset.forName("UTF-8")));
-			File report = new File(reportFilePath);
-			FileBody fileBody = new FileBody(report);
-			entity.addPart("file", fileBody);
-			HttpPost httpPost = new HttpPost(Properties.appvetUrl);
-			String credentials = Base64.getEncoder().encodeToString((Properties.appvetUsername + ":" + Properties.appvetPassword).getBytes());
-			httpPost.setHeader("Authorization", "Basic " + credentials);
-
-			httpPost.setEntity(entity);
-			// Send the report to AppVet
-			log.debug("Sending report file to AppVet");
-			final HttpResponse response = httpClient.execute(httpPost);
-			log.debug("Received from AppVet: " + response.getStatusLine());
-			// Clean up
-			httpPost = null;
-			return true;
-		} catch (Exception e) {
-			e.printStackTrace();
-			log.error(e.getMessage());
-			return false;
-			
-		}*/
+	
 	}
 
 	/** This method should be used for sending files back to AppVet. */
