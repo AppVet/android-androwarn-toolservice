@@ -142,6 +142,7 @@ public class Service extends HttpServlet {
 					} else if (incomingParameter.equals("appname")) {
 						// Note incoming value from AppVet will have '%20' for spaces!
 						appName = incomingValue;
+						log.debug("GOT APP NAME: " + appName);
 						appMetadataHashMap.put("application_name", new Value(incomingValue, Value.DataType.STRING, Value.InfoType.METADATA));
 					} else if (incomingParameter.equals("appos")) {
 						appOs = incomingValue;
@@ -265,7 +266,7 @@ public class Service extends HttpServlet {
 		StringBuffer result = new StringBuffer();
 		int exitValue = cmd.exec(pb, waitMinutes, result);
 
-		log.debug("RESULT: " + result);
+		//log.debug("RESULT: " + result);
 		
 		if (exitValue != 0) {
 			// All tool services require an AppVet app ID
