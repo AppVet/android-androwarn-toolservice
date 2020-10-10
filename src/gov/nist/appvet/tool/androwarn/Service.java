@@ -71,9 +71,9 @@ public class Service extends HttpServlet {
 	private static final Logger log = Properties.log;
 	private static String appDirPath = null;
 	private String jsonFileReportPath = null;
-	private String appIconFilePath = null;
-	private String appId = null;
-	private static String python3Cmd = null;
+//	private String appIconFilePath = null;
+//	private String appId = null;
+//	private static String python3Cmd = null;
 	private static String wkhtmltopdfCmd = null;
 	
 	public static HashMap<String, ArrayList<AppMetadata>> metadataHashMap = new HashMap<String, ArrayList<AppMetadata>>();
@@ -85,11 +85,11 @@ public class Service extends HttpServlet {
 		super();
 		String toolOS = System.getProperty("os.name");
 		if (toolOS.toUpperCase().indexOf("WIN") > -1) {
-			python3Cmd = "python3";
+			//python3Cmd = "python3";
 			wkhtmltopdfCmd = "wkhtmltopdf";
 
 		} else if (toolOS.toUpperCase().indexOf("NUX") > -1) {
-			python3Cmd = "python3";
+			//python3Cmd = "python3";
 			wkhtmltopdfCmd = Properties.htmlToPdfCommand;
 		}
 		
@@ -144,6 +144,7 @@ public class Service extends HttpServlet {
 					} else if (incomingParameter.equals("appname")) {
 						// Note incoming value from AppVet will have '%20' for spaces!
 						appName = incomingValue;
+						log.debug("GOT APP NAME: " + appName);
 						appMetadataHashMap.put("application_name", new Value(incomingValue, Value.DataType.STRING, Value.InfoType.METADATA));
 					} else if (incomingParameter.equals("appos")) {
 						appOs = incomingValue;
@@ -267,6 +268,8 @@ public class Service extends HttpServlet {
 		StringBuffer result = new StringBuffer();
 		int exitValue = cmd.exec(pb, waitMinutes, result);
 
+		//log.debug("RESULT: " + result);
+		
 		if (exitValue != 0) {
 			// All tool services require an AppVet app ID
 			sendErrorReport(appId, appName, appVersion, 
@@ -281,6 +284,7 @@ public class Service extends HttpServlet {
 				"root:root",
 				jsonFileReportPath
 				);
+		
 		result = new StringBuffer();
 		exitValue = cmd.exec(pb, waitMinutes, result);
 
@@ -342,7 +346,7 @@ public class Service extends HttpServlet {
 	
 		
 		// Send to AppVet
-		sendInNewHttpRequest(appId, pdfFileReportPath, avgCvss);
+		sendReport(appId, pdfFileReportPath, avgCvss);
 		
 		// Clear structures
 		//log.debug("Clearing hashmaps");
@@ -397,6 +401,7 @@ public class Service extends HttpServlet {
 
 		// Generate PDF file from HTML report
 		ProcessBuilder pb = new ProcessBuilder(
+				"sudo ", 
 				wkhtmltopdfCmd,
 				htmlFileReportPath,
 				pdfFileReportPath
@@ -417,7 +422,7 @@ public class Service extends HttpServlet {
 		log.debug("Sending report to AppVet");
 
 		// Send to AppVet
-		sendInNewHttpRequest(appId, pdfFileReportPath, -1.0);
+		sendReport(appId, pdfFileReportPath, -1.0);
 	}
 	
 	private static void loadCvssData() {
@@ -660,6 +665,41 @@ public class Service extends HttpServlet {
 			}
 		}
 		return false;
+	}
+	
+	/** This method should be used for sending files back to AppVet. */
+	public static boolean sendReport(String appId,
+			String reportFilePath,
+			double toolScore) {
+	
+		// Androwarn command without args (i.e., sudo python3 androwarn.py)
+		String newCmd = 
+				" curl --verbose -F command=SUBMIT_REPORT -F  appid=\"" 
+						+ appId + "\" -F toolid=\"" + Properties.toolId + "\" -F toolscore=\"" 
+						+ toolScore + "\" -F file@/\"" + reportFilePath + "\" "
+								+ " http://127.0.0.1:8080/appvet/AppVetServlet";
+		
+		String[] fullCmd = newCmd.split("\\s+");
+		ProcessBuilder pb = new ProcessBuilder(fullCmd);
+
+		// Run Androwarn and generate JSON report
+		int waitMinutes = 60; // wait in minutes
+		StringBuffer result = new StringBuffer();
+		Native cmd = null;
+
+		int exitValue = cmd.exec(pb, waitMinutes, result);
+
+		//log.debug("RESULT: " + result);
+		
+		if (exitValue != 0) {
+			// All tool services require an AppVet app ID
+			log.error("Got non-zero value: " + result.toString());
+			return false;
+		} else {
+			log.error("Success: " + result.toString());
+			return true;
+		}
+	
 	}
 
 	/** This method should be used for sending files back to AppVet. */
