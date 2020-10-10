@@ -30,6 +30,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -337,6 +339,7 @@ public class Service extends HttpServlet {
 					appPackage, fileName, metadataHashMap, result.toString(), appIconFilePath, htmlFileReportPath, pdfFileReportPath);
 			return;
 		}
+	
 		
 		// Send to AppVet
 		sendInNewHttpRequest(appId, pdfFileReportPath, avgCvss);
@@ -362,6 +365,8 @@ public class Service extends HttpServlet {
 		log.debug("End processing");
 
 	}
+	
+
 	
 	public void sendErrorReport(String appId, String name, String version, String appPackage, 
 			String fileName, HashMap<String, ArrayList<AppMetadata>> metadataHashMap, 
